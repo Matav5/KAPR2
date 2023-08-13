@@ -1,0 +1,19 @@
+import random
+
+class Dices():
+    def roll(self):
+        roundRoll = []
+        for i in range(2):
+            roll = random.randint(1, 6)
+            print(f"hod:{roll}")
+            roundRoll.append(roll)
+
+        if roundRoll[0] == roundRoll[1]:
+            roundRoll.append(roundRoll[0])
+            roundRoll.append(roundRoll[0])
+
+        print(roundRoll)
+        return roundRoll
+
+kostka = Dices()
+kostka.roll()
