@@ -26,8 +26,8 @@ class HerniKostky():
             self.historie.append(hondnota_hodu)
 
         if seznam_hodnot[i] == seznam_hodnot[i+1]:
-            seznam_hodnot.append(seznam_hodnot[0])
-            seznam_hodnot.append(seznam_hodnot[0])
+            seznam_hodnot.append(seznam_hodnot[i])
+            seznam_hodnot.append(seznam_hodnot[i])
 
         return seznam_hodnot
 
