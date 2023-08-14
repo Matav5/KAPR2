@@ -35,7 +35,7 @@ class HerniKostky():
 moje_kostka = HerniKostky()
 hodnoty = moje_kostka.hod()
 
-print("Hodnota kostek je:", hodnoty)
+print(f"Hodnota kostek je: {hodnoty}")
 print(moje_kostka.historie)
 
 
