@@ -57,8 +57,8 @@ class Policko:
     '''
     Třída pro políčka obsahující zásobník kamenů a pozici pro grafické zobrazení
     '''
-    def __init__(self, pozice : Pozice) -> None:
-        self.pozice = Pozice(pozice.x,pozice.y)
+    def __init__(self, x,y) -> None:
+        self.pozice = Pozice(x,y)
         self.kameny = deque()
 
     def pridejKamen(self,kamen:Kamen) -> None:
@@ -111,10 +111,8 @@ class Hra:
         self.herniPole = []
         self.vygenerujPole()
         self.vlozKameny()
-        for y in self.herniPole:
-            print("\n")
-            for x in y:
-                print(x, end=" ")
+        for x in self.herniPole:
+            print(x, end=" ")
 
         #Implementovat rozhodnutí pořadí kostkou
         self.aktualniHrac = cervenyHrac
@@ -128,19 +126,32 @@ class Hra:
 
     def vlozKamenyNaSloupci(self, hracPrvniRadek : Hrac,hracDruhyRadek : Hrac, sloupec: Number, pocet: Number):
         for i in range(0,pocet):
-            self.herniPole[0][sloupec].pridejKamen(Kamen(hracPrvniRadek)) 
-            self.herniPole[1][sloupec].pridejKamen(Kamen(hracDruhyRadek))
+            self.herniPole[sloupec].pridejKamen(Kamen(hracPrvniRadek)) 
+            self.herniPole[sloupec + 11].pridejKamen(Kamen(hracDruhyRadek))
 
-
+        
+    def vytvorRadu(self,seznamPolicek,zacX,zacY,pocet,smer, velPol = 90): 
+        for i in range(pocet):
+            seznamPolicek.append(Policko(zacX +  i * velPol * smer ,zacY ))
 
     def vygenerujPole(self):
         '''
             Vytvoří a vloží políčka !!!! Je potřeba je správně napozicovat !!!!
         '''
-        for y in range(0,2):
-            self.herniPole.append([])
-            for x in range(0,12):
-                self.herniPole[y].append(Policko((y*500,x*50)))
+        policka = list()
+        self.vytvorRadu(policka,1400,250,6,-1)
+        self.vytvorRadu(policka,800,250,6,-1)
+        self.vytvorRadu(policka,350,875,6,1)
+        self.vytvorRadu(policka,950,875,6,1)
+        # x 350 350
+        # y 250 875 
+        #mezi polema 
+        #bar 50 px
+        i = 0
+        for policko in policka:
+            i+=1
+            print(f"Poličko ({i}) na poz: X: {policko.pozice.x} Y:{policko.pozice.y}")
+        self.herniPole = policka
 
     def vypisTah(self):
         '''
@@ -153,4 +164,5 @@ class Hra:
         else:
             self.aktualniHrac = self.cervenyHrac
     
-hra = Hra(Hrac(),Hrac())
+hra = Hra(Hrac(Pozice(100,100)),Hrac(Pozice(100,200)))
+print(hra.herniPole)
