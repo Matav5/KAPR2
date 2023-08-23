@@ -130,7 +130,7 @@ class Hra:
         self.cervenyHrac.smer = 1
 
         self.bilyHrac = bilyHrac
-        self.cervenyHrac.smer = -1
+        self.bilyHrac.smer = -1
 
         self.herniPole = []
         self.vygenerujPole()
@@ -190,13 +190,20 @@ class Hra:
         return moznePolicka
 
     def vypisTah(self, kostky : list, policko : int) -> list():
+
+        '''
+        Chybí kombinace kostek. Kostky samotný už fungujou
+        '''
         kamen = self.herniPole[policko].posledniKamen()
         moznePolicka = list()
         for index, kostka in enumerate(kostky):
             # for soucet in range(index,0,-1):
-            moznePolicko = self.herniPole[policko+kostka * kamen.hrac.smer]
+            cil = policko+kostka * kamen.hrac.smer
+            if cil <= 0 or cil >= len(self.herniPole):
+                continue
+            moznePolicko = self.herniPole[cil]
             if moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac:
-                moznePolicka.append(moznePolicko)
+                moznePolicka.append((kamen,moznePolicko))
         return moznePolicka
 
     def prepniHrace(self):
@@ -206,3 +213,12 @@ class Hra:
             self.aktualniHrac = self.cervenyHrac
     
 hra = Hra(Hrac(Pozice(100,100)),Hrac(Pozice(100,200)))
+'''
+hra.prepniHrace()
+kostky = list()
+kostky.append(5)
+kostky.append(1)
+moznosti = hra.vypisTahyPolicek(kostky)
+for moznost in moznosti:
+    print(f"{moznost[0].hrac} {moznost[0].souradnice} -> {moznost[1].souradnice}")
+'''
