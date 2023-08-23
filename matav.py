@@ -43,6 +43,8 @@ class Hrac:
     '''
     def __init__(self, poziceDomecku : Pozice) -> None:
         self.domecek = Domecek(Pozice(poziceDomecku.x,poziceDomecku.y))
+        self.smer = None
+
    
 class Kamen:
     '''
@@ -121,7 +123,11 @@ class Hra:
     def __init__(self, cervenyHrac : Hrac, bilyHrac : Hrac) -> None:
         self.dvojKostka = HerniKostky()
         self.cervenyHrac = cervenyHrac
+        self.cervenyHrac.smer = 1
+
         self.bilyHrac = bilyHrac
+        self.cervenyHrac.smer = -1
+
         self.herniPole = []
         self.vygenerujPole()
         self.vlozKameny()
@@ -173,9 +179,10 @@ class Hra:
             print(policko.vlastnikPolicka())
             if not policko.maKamen():
                 continue
-            elif policko.maKamen() & policko.vlastnikPolicka() == self.aktualniHrac:
+            elif policko.maKamen() and policko.vlastnikPolicka() != self.aktualniHrac:
+                continue
+            else:
                 self.vypisTah(kostky,index)
-
 
     def vypisTah(self, kostky : list, policko : int) -> list():
         hrac = self.herniPole[policko].posledniKamen()
@@ -183,7 +190,7 @@ class Hra:
         for index, kostka in enumerate(kostky):
             # for soucet in range(index,0,-1):
             moznePolicko = self.herniPole[policko+kostka]
-            if moznePolicko.maKamen() | moznePolicko.vlastnikPolicka() == hrac:
+            if moznePolicko.maKamen() or moznePolicko.vlastnikPolicka() == hrac:
                 moznePolicka.append(moznePolicko)
         return moznePolicka
 
