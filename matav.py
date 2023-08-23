@@ -67,6 +67,20 @@ class Policko:
     
     def __str__(self) -> str:
         return str(len(self.kameny))
+    
+    def maKamen(self)->bool:
+        return len(self.kameny) > 0
+
+    def posledniKamen(self) -> Kamen:
+        if not self.maKamen():
+            return None
+        return self.kameny[len(self.kameny)-1]
+    
+    def vlastnikPolicka(self) -> Hrac:
+        if not self.maKamen():
+            return None
+        
+        return self.posledniKamen().hrac
 
 class Bar:
     '''
@@ -153,19 +167,30 @@ class Hra:
             print(f"Poličko ({i}) na poz: X: {policko.pozice.x} Y:{policko.pozice.y}")
         self.herniPole = policka
 
-    def vypisTah(self):
-        '''
-            Vypíše všechny aktuální možné tahy (graficky)
-        '''
-        pass
+
+    def vypisTahyPolicek(self,kostky):
+        for index,policko in enumerate(self.herniPole):
+            print(policko.vlastnikPolicka())
+            if not policko.maKamen():
+                continue
+            elif policko.maKamen() & policko.vlastnikPolicka() == self.aktualniHrac:
+                self.vypisTah(kostky,index)
+
+
+    def vypisTah(self, kostky : list, policko : int) -> list():
+        hrac = self.herniPole[policko].posledniKamen()
+        moznePolicka = list()
+        for index, kostka in enumerate(kostky):
+            # for soucet in range(index,0,-1):
+            moznePolicko = self.herniPole[policko+kostka]
+            if moznePolicko.maKamen() | moznePolicko.vlastnikPolicka() == hrac:
+                moznePolicka.append(moznePolicko)
+        return moznePolicka
+
     def prepniHrace(self):
         if self.aktualniHrac == self.cervenyHrac:
             self.aktualniHrac = self.bilyHrac 
         else:
             self.aktualniHrac = self.cervenyHrac
-
-
-    def pohybKamene(self, ):
     
 hra = Hra(Hrac(Pozice(100,100)),Hrac(Pozice(100,200)))
-print(hra.herniPole)
