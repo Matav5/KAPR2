@@ -35,7 +35,8 @@ class Pozice:
         if __value is Pozice:
             return __value.x == self.x and __value.y == self.y
         return False       
-
+    def __str__(self) -> str:
+        return f"X: {self.x} Y: {self.y}"
           
 class Hrac:
     '''
@@ -50,7 +51,8 @@ class Kamen:
     '''
     Třída pro kámen s historií (zásobník) s hráčem který kámen vlastní pozicí pro grafické zobrazení
     '''
-    def __init__(self, hrac: Hrac) -> None:
+    def __init__(self,souradnice, hrac: Hrac) -> None:
+        self.souradnice = souradnice
         self.historie = deque()
         self.pozice = Pozice(0,0)
         self.hrac = hrac
@@ -59,12 +61,14 @@ class Policko:
     '''
     Třída pro políčka obsahující zásobník kamenů a pozici pro grafické zobrazení
     '''
-    def __init__(self, x,y) -> None:
+    def __init__(self,souradnice, x,y) -> None:
+        self.souradnice = souradnice
         self.pozice = Pozice(x,y)
         self.kameny = deque()
 
     def pridejKamen(self,kamen:Kamen) -> None:
         kamen.pozice = self.pozice 
+        kamen.souradnice = self.souradnice
         self.kameny.append(kamen)
     
     def __str__(self) -> str:
@@ -80,9 +84,9 @@ class Policko:
     
     def vlastnikPolicka(self) -> Hrac:
         if not self.maKamen():
-            return None
-        
+            return None   
         return self.posledniKamen().hrac
+    
 
 class Bar:
     '''
@@ -131,9 +135,7 @@ class Hra:
         self.herniPole = []
         self.vygenerujPole()
         self.vlozKameny()
-        for x in self.herniPole:
-            print(x, end=" ")
-
+      
         #Implementovat rozhodnutí pořadí kostkou
         self.aktualniHrac = cervenyHrac
     
@@ -146,13 +148,15 @@ class Hra:
 
     def vlozKamenyNaSloupci(self, hracPrvniRadek : Hrac,hracDruhyRadek : Hrac, sloupec: Number, pocet: Number):
         for i in range(0,pocet):
-            self.herniPole[sloupec].pridejKamen(Kamen(hracPrvniRadek)) 
-            self.herniPole[len(self.herniPole)-1-sloupec ].pridejKamen(Kamen(hracDruhyRadek))
+            indexHorni = sloupec
+            indexSpodni = len(self.herniPole)-1-sloupec
+            self.herniPole[indexHorni].pridejKamen(Kamen(indexHorni,hracPrvniRadek)) 
+            self.herniPole[indexSpodni].pridejKamen(Kamen(indexSpodni,hracDruhyRadek))
 
         
     def vytvorRadu(self,seznamPolicek,zacX,zacY,pocet,smer, velPol = 90): 
         for i in range(pocet):
-            seznamPolicek.append(Policko(zacX +  i * velPol * smer ,zacY ))
+            seznamPolicek.append(Policko(len(seznamPolicek),zacX +  i * velPol * smer ,zacY ))
 
     def vygenerujPole(self):
         '''
@@ -174,23 +178,24 @@ class Hra:
         self.herniPole = policka
 
 
-    def vypisTahyPolicek(self,kostky):
+    def vypisTahyPolicek(self,kostky) -> list():
+        moznePolicka = list()
         for index,policko in enumerate(self.herniPole):
-            print(policko.vlastnikPolicka())
             if not policko.maKamen():
                 continue
             elif policko.maKamen() and policko.vlastnikPolicka() != self.aktualniHrac:
                 continue
             else:
-                self.vypisTah(kostky,index)
+               moznePolicka.extend(self.vypisTah(kostky,index))
+        return moznePolicka
 
     def vypisTah(self, kostky : list, policko : int) -> list():
-        hrac = self.herniPole[policko].posledniKamen()
+        kamen = self.herniPole[policko].posledniKamen()
         moznePolicka = list()
         for index, kostka in enumerate(kostky):
             # for soucet in range(index,0,-1):
-            moznePolicko = self.herniPole[policko+kostka]
-            if moznePolicko.maKamen() or moznePolicko.vlastnikPolicka() == hrac:
+            moznePolicko = self.herniPole[policko+kostka * kamen.hrac.smer]
+            if moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac:
                 moznePolicka.append(moznePolicko)
         return moznePolicka
 
