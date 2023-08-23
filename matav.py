@@ -119,15 +119,15 @@ class Hra:
     
     #viz obrázek ./pomocnyMaterial/deskaLayout.png
     def vlozKameny(self):
-        self.vlozKamenyNaSloupci(self.cervenyHrac,self.bilyHrac, 0,5)
-        self.vlozKamenyNaSloupci(self.bilyHrac,self.cervenyHrac, 4,3)
-        self.vlozKamenyNaSloupci(self.bilyHrac,self.cervenyHrac, 6,5)
-        self.vlozKamenyNaSloupci(self.cervenyHrac,self.bilyHrac, 11,2)
+        self.vlozKamenyNaSloupci(self.cervenyHrac,self.bilyHrac, 11,5)
+        self.vlozKamenyNaSloupci(self.bilyHrac,self.cervenyHrac, 7,3)
+        self.vlozKamenyNaSloupci(self.bilyHrac,self.cervenyHrac, 5,5)
+        self.vlozKamenyNaSloupci(self.cervenyHrac,self.bilyHrac, 0,2)
 
     def vlozKamenyNaSloupci(self, hracPrvniRadek : Hrac,hracDruhyRadek : Hrac, sloupec: Number, pocet: Number):
         for i in range(0,pocet):
             self.herniPole[sloupec].pridejKamen(Kamen(hracPrvniRadek)) 
-            self.herniPole[sloupec + 11].pridejKamen(Kamen(hracDruhyRadek))
+            self.herniPole[len(self.herniPole)-1-sloupec ].pridejKamen(Kamen(hracDruhyRadek))
 
         
     def vytvorRadu(self,seznamPolicek,zacX,zacY,pocet,smer, velPol = 90): 
