@@ -1,6 +1,6 @@
 import pygame
 from pygame.sprite import  Sprite, Group
-
+from matav import Policko, Kamen, Hra, Hrac, Pozice
 class Akce:
     def __init__(self) -> None:
         self.seznamFunkci = list()
@@ -42,19 +42,31 @@ rndSprite = ObrazkovySprite(50,50,"pomocnyMaterial\deskaLayout.png")
 rndSprite.naKlik.pridejAkci(lambda x: print(x[1]))
 rndSprite.naKlik.pridejAkci(lambda x: print(x))
 sprites.add(rndSprite)
+
+
+
+VybranyKamen = Kamen()
+#Ukaž možnosti specifického kamene
+
+#Pokud nemá kámen vybrané kameny ukáže všechny kamena nebo ukáže v BARU pokud tam nějakej je
 running = True
+
+vybranePolicko = None
+clovekHrac = Hrac(Pozice(100,100))
+hra = Hra(clovekHrac,Hrac(Pozice(100,200)))
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            for sprite in sprites:
-                if sprite.rect.collidepoint(event.pos):
-                    try:
-                        sprite.klik(event.pos)
-                    except:
-                        pass
 
+            if hra.hracNaRade(clovekHrac):
+                for sprite in sprites:
+                    if sprite.rect.collidepoint(event.pos):
+                            if sprite is Policko:
+                               vybranePolicko = sprite
+                      
 
     screen.fill((0, 0, 0))
     sprites.draw(screen)
