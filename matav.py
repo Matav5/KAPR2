@@ -291,11 +291,30 @@ class Hra:
             self.aktualniHrac = self.cervenyHrac
         #TODO Pokud hráč bude AIHrac => zavolá funkci Hraj(hra)
 
-    def update(self, event : List[Event]):
+    def update(self, event: List[Event]):
         for group in self.groups:
             for sprite in group:
                 if sprite.rect.collidepoint(event.pos):
-                    print(type(sprite))
+                    if type(sprite) is Policko:
+                        print(self.vypisTah(self.dvojKostka.hod(), -1))
+                        print(f"Políčko !! {type(sprite)}")
+                        break
+                        # TODO zjistit jak ošetřit, že již je políčko vybrané a chceme kliknout na higlightované - příznak?
+                    elif type(sprite) is Bar and len(sprite.vyrobeneKameny) >= 1:
+                        for kamen in sprite.vyrobeneKameny:
+                            if kamen.hrac == self.aktualniHrac:
+                                if self.hracNaRade(self.aktualniHrac) == self.cervenyHrac:
+                                    self.vypisTah(self.dvojKostka.hod(), -1)
+                                else:
+                                    self.vypisTah(self.dvojKostka.hod(), 25)
+
+                                # TODO podivej se, jestli má hráč na tahu kameny na baru, pokud ano, neumožni mu hrát jiný kámen
+                    elif type(sprite) is Domecek:  # Je to domeček
+                        print(f"Domeček !!! {type(sprite)}")
+
+                        # TODO navrhni kontrolu domečku hráče - zda tam může jít -- všechny kameny ve 4. segmentu -- checkování zda je domeček full ve hře
+
+    # Když bude v baru více než jeden, musíš ho vybrat a pokud ho vybereš, ukáže políčka z baru --
 
 
 '''
