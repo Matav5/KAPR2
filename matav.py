@@ -112,6 +112,9 @@ class Policko(Sprite):
     def maKamen(self)->bool:
         return len(self.kameny) > 0
 
+    def daSeSebratKamen(self)->bool:
+        return len(self.kameny) == 1
+    
     def posledniKamen(self) -> Kamen:
         if not self.maKamen():
             return None
@@ -194,7 +197,7 @@ class Hra:
         self.vygenerujPole()
         self.vlozKameny()
       
-        #Implementovat rozhodnutí pořadí kostkou
+        #TODO Implementovat rozhodnutí pořadí kostkou
         self.aktualniHrac = cervenyHrac
     
     #viz obrázek ./pomocnyMaterial/deskaLayout.png
@@ -316,6 +319,20 @@ class Hra:
 
     # Když bude v baru více než jeden, musíš ho vybrat a pokud ho vybereš, ukáže políčka z baru --
 
+class AIHrac(Hrac):
+        def __init__(self, obrazek, *groups : Group) -> None:
+         super().__init__(obrazek, groups)
+        def hraj(self, hra : Hra):
+            tahy = hra.vypisTahyPolicek(hra.dvojKostka)
+            if len(tahy) == 0:
+                return
+            nejlepsiTahy = tahy[0]
+            agrese = False
+            if self.smer == 1:
+                for tah in tahy:
+                    if hra.herniPole[tah].vlastnikPolicka != self and hra.herniPole[tah].daSeSebratKamen():
+                        hra.pohniKamen(tah)
+                     
 
 '''
 hra = Hra(Hrac("white_front_side.png"),Hrac("white_front_side.png"))
