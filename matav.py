@@ -1,11 +1,15 @@
 
 from collections import deque
 from numbers import Number
-from pygame import Rect, image
+from typing import List
+from pygame import Rect, Surface, image
+import pygame
 from pygame.sprite import Group,Sprite
 from dice import HerniKostky
+from pygame.event import Event
 
-
+invisibleImage = pygame.Surface((32, 32), pygame.SRCALPHA)
+invisibleImage.fill((0, 0, 0, 0)) 
 
 class ObrazkovySprite(Sprite):
     def __init__(self, x, y , obrazek_cesta: str,*groups: Group) -> None:
@@ -52,18 +56,22 @@ class Hrac:
     '''
     Třída pro hráče obsahující domeček sloužící k rozlišování kdo hraje a koho je co
     '''
-    def __init__(self, poziceDomecku : Pozice, obrazek) -> None:
-        self.domecek = Domecek(Pozice(poziceDomecku.x,poziceDomecku.y))
+    def __init__(self, obrazek, *groups : Group) -> None:
+        self.groups = groups
+        self.domecek = None
+        self.bar = None
         self.smer = None
         self.obrazek = obrazek
-
+    def nastavDomecekABar(self, poziceDomecku: Pozice, poziceBaru : Pozice):
+        self.domecek = Domecek(poziceDomecku,self)
+        self.bar = Bar(poziceBaru,self)
    
 class Kamen(Sprite):
     '''
     Třída pro kámen s historií (zásobník) s hráčem který kámen vlastní pozicí pro grafické zobrazení
     '''
-    def __init__(self, hrac: Hrac, *groups :Group) -> None:
-        super().__init__(groups)
+    def __init__(self, hrac: Hrac) -> None:
+        super().__init__(hrac.groups)
         self.souradnice = 2**32
         self.historie = deque()
         self.pozice = Pozice(0,0)
@@ -87,7 +95,7 @@ class Policko(Sprite):
         self.rect.height = 300
         self.rect.width = 90
         self.rect.center = (x,y)
-        self.image = None
+        self.image = invisibleImage
     def pridejKamen(self,kamen:Kamen) -> None:
         kamen.pozice = Pozice(self.pozice.x, self.pozice.y + kamen.rect.width/1.5 * len(self.kameny))
         kamen.souradnice = self.souradnice 
@@ -119,18 +127,27 @@ class Bar(Sprite):
     '''
     Třída pro bar sloužící jako vytvářeč pro zničené kameny s pozicí pro grafické zobrazení
     '''
-    def __init__(self, pozice : Pozice, *groups :Group) -> None:
-        super().__init__(groups)
+    def __init__(self, pozice : Pozice, hrac : Hrac) -> None:
+        super().__init__(hrac.groups)
+        self.hrac = hrac
         self.pozice = pozice
+        self.rect = Rect(0,0,0,0)
+        self.rect.width = 80
+        self.rect.height = 300
+        self.rect.center = (pozice.x,pozice.y)
+    
         self.vyrobeneKameny = deque()
+        self.image = invisibleImage
+
     def vyrobKamen(self) -> Kamen:
-        kamen =  Kamen()
-        kamen.pozice = self.pozice
+        kamen =  Kamen(self.hrac)
+        kamen.pozice = Pozice(self.pozice.x, self.pozice.y + kamen.rect.width/1.5 * len(self.vyrobeneKameny))
         kamen.updateGrafiku()
         self.vyrobeneKameny.append(
             kamen
             )
         return kamen
+    
     def vemKamen(self) -> Kamen:
         return self.vyrobeneKameny.pop()
     
@@ -139,14 +156,16 @@ class Domecek(Sprite):
     '''
     Třída pro domeček sloužící jako cíl pro Hráče s pozicí pro grafické zobrazení
     '''
-    def __init__(self, pozice, *groups :Group) -> None:
-        super().__init__(groups)
+    def __init__(self, pozice, hrac : Hrac) -> None:
+        super().__init__(hrac.groups)
+        self.hrac = hrac
         self.pozice = pozice
         self.kamenyVDomecku = deque()
         self.rect = Rect(0,0,0,0)
         self.rect.width = 80
         self.rect.height = 300
         self.rect.center = (pozice.x,pozice.y)
+        self.image = invisibleImage
         
 
     def schovejKamen(self, kamen:Kamen) -> Kamen:
@@ -160,13 +179,16 @@ class Hra:
     '''
     Třída hry která při vytvoření vytvoří herní pole, vloží kameny a nastaví hráče podle parametrů -> bude sloužit jako základní stavební kámen hry
     '''
-    def __init__(self, cervenyHrac : Hrac, bilyHrac : Hrac) -> None:
+    def __init__(self, cervenyHrac : Hrac, bilyHrac : Hrac, *groups : Group) -> None:
+        self.groups = groups
         self.dvojKostka = HerniKostky()
         self.cervenyHrac = cervenyHrac
         self.cervenyHrac.smer = 1
+        self.cervenyHrac.nastavDomecekABar(Pozice(1550,310),Pozice(875,310))
 
         self.bilyHrac = bilyHrac
         self.bilyHrac.smer = -1
+        self.bilyHrac.nastavDomecekABar(Pozice(1550,760),Pozice(875,760))
 
         self.herniPole = []
         self.vygenerujPole()
@@ -192,7 +214,7 @@ class Hra:
         
     def vytvorRadu(self,seznamPolicek,zacX,zacY,pocet,smer, velPol = 90): 
         for i in range(pocet):
-            seznamPolicek.append(Policko(len(seznamPolicek),zacX +  i * velPol * smer ,zacY ))
+            seznamPolicek.append(Policko(len(seznamPolicek),zacX +  i * velPol * smer ,zacY, self.groups ))
 
     def vygenerujPole(self):
         '''
@@ -215,6 +237,9 @@ class Hra:
 
 
     def vypisTahyPolicek(self,kostky) -> list():
+        '''
+        Výpis možností pro hráče
+        '''
         moznePolicka = list()
         for index,policko in enumerate(self.herniPole):
             if not policko.maKamen():
@@ -226,9 +251,8 @@ class Hra:
         return moznePolicka
 
     def vypisTah(self, kostky : list, policko : int) -> list():
-
         '''
-        Chybí kombinace kostek. Kostky samotný už fungujou
+        Výpis pro specifické políčko
         '''
         kamen = self.herniPole[policko].posledniKamen()
         moznePolicka = list()
@@ -265,8 +289,17 @@ class Hra:
             self.aktualniHrac = self.bilyHrac 
         else:
             self.aktualniHrac = self.cervenyHrac
-    
-hra = Hra(Hrac(Pozice(100,100), "white_front_side.png"),Hrac(Pozice(100,200),"white_front_side.png"))
+        #TODO Pokud hráč bude AIHrac => zavolá funkci Hraj(hra)
+
+    def update(self, event : List[Event]):
+        for group in self.groups:
+            for sprite in group:
+                if sprite.rect.collidepoint(event.pos):
+                    print(type(sprite))
+
+
+'''
+hra = Hra(Hrac("white_front_side.png"),Hrac("white_front_side.png"))
 
 hra.prepniHrace()
 kostky = (4,4,4,4)
@@ -274,3 +307,20 @@ print(kostky)
 moznosti = hra.vypisTahyPolicek(kostky)
 for moznost in moznosti:
     print(f"{moznost[0].hrac} {moznost[0].souradnice} -> {moznost[1].souradnice}")
+'''
+
+
+'''
+hra.aktualniHrac.bar.vyrobKamen()
+    hra.prepniHrace()
+    if hra.hracNaRade(clovekHrac):
+        for sprite in vykreslovaci_group:
+            if sprite.rect.collidepoint(event.pos):
+                print(type(sprite))
+                if type(sprite) is Policko:
+                       
+                            
+                    print("Poličko")
+                if type(sprite) is Kamen:
+                    print("Kamen")
+'''
