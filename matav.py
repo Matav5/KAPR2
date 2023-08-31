@@ -80,7 +80,7 @@ class Kamen(Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = [0,0]        
     def updateGrafiku(self):
-        self.rect.center = (self.pozice.x,self.pozice.y)      
+        self.rect.center = (self.pozice.x,self.pozice.y)     
 
 class Policko(Sprite):
     '''
@@ -103,7 +103,10 @@ class Policko(Sprite):
         self.kameny.append(kamen)
     def odeberKamen(self) -> Kamen:
         try:
-            return self.kameny.pop()
+            kamen = self.kameny.pop()
+            kamen.pozice = Pozice(10000,10000)
+            kamen.souradnice = 300000000000
+            return kamen
         except:
             return None
     def __str__(self) -> str:
@@ -316,28 +319,99 @@ class Hra:
                         print(f"Domeček !!! {type(sprite)}")
 
                         # TODO navrhni kontrolu domečku hráče - zda tam může jít -- všechny kameny ve 4. segmentu -- checkování zda je domeček full ve hře
-
+   
+   
+   
+    def pohniKamen(self, kamen : Kamen, cil : Policko):
+        pass
+   
+    def maHracKamenyVeCtvrtymSegmentu(self, hrac : Hrac) -> bool:
+        if hrac.smer == 1:
+            startIndex = 23
+        else:
+            startIndex = 0
+        endIndex = startIndex - 6 * hrac.smer
+        pocetKamenu = 0
+        for souradnice in range(startIndex, endIndex, -hrac.smer):
+            if self.herniPole[souradnice].vlastnikPolicka() == hrac:
+                pocetKamenu += len(self.herniPole[souradnice].kameny)
+        print(pocetKamenu)
+        return pocetKamenu == 15
     # Když bude v baru více než jeden, musíš ho vybrat a pokud ho vybereš, ukáže políčka z baru --
-
+    
 class AIHrac(Hrac):
         def __init__(self, obrazek, *groups : Group) -> None:
          super().__init__(obrazek, groups)
         def hraj(self, hra : Hra):
-            tahy = hra.vypisTahyPolicek(hra.dvojKostka)
-            if len(tahy) == 0:
+            '''
+            AI hraje agresivně. Pokud uvidí osamocený kámen jde po něm jak slepice po flusu!
+            Pokud se dostane do 4. segmentu AI se snaží dostat se do domečku.
+            AI se snaží chránit si kameny. Pokud bude mít možnost tak se pokusí se svůj kámen ochránit dalším
+            Jinak se snaží dostat co nejdál 
+            '''
+            if hra.aktualniHrac != self:
                 return
-            nejlepsiTahy = tahy[0]
-            agrese = False
-            if self.smer == 1:
+            while len(hra.dvojKostka.seznamHodnot) > 0 and hra.dvojKostka.hodilKostkou:
+                tahy = hra.vypisTahyPolicek(hra.dvojKostka.seznamHodnot)
+                #Pokud nemá tahy ukončí kolo
+                if len(tahy) == 0:
+                    return
+                nejlepsiTah = tahy[0] 
                 for tah in tahy:
-                    if hra.herniPole[tah].vlastnikPolicka != self and hra.herniPole[tah].daSeSebratKamen():
-                        hra.pohniKamen(tah)
+                    #Zjistí jestli tah má v cíli protivníka který má jen jeden kámen => pokud ano ihned se tam pohne a pokračuje dalším tahem
+                    if tah[1].vlastnikPolicka != self and tah[1].daSeSebratKamen():
+                        nejlepsiTah = tah
+                        break
+                    #Pokud má všechny kameny na konci => snaží se ty nejvzdálenější možné kameny nacpat do domečku
+                    elif hra.maHracKamenyVeCtvrtymSegmentu(self):
+                        #smer 1 od shora dolů
+                        if self.smer == 1:
+                            if nejlepsiTah.souradnice <= 23 and nejlepsiTah[1].souradnice < tah[1].souradnice:
+                                nejlepsiTah = tah
+                                if nejlepsiTah >= 24:
+                                    break
+                        else:
+                             if nejlepsiTah.souradnice >= 0 and nejlepsiTah[1].souradnice > tah[1].souradnice:
+                                nejlepsiTah = tah
+                                if nejlepsiTah <= 0:
+                                    break
+                    #Pokud má osamocený kámen snaží se ho ochránit
+                    elif self.osamocenyKamen(hra,tah):
+                        nejlepsiTah = tah
+                        break
+                    #Pokud nic jiného nevyjde
+                    else:
+                        if self.smer == 1:
+                           if tah[0].souradnice < nejlepsiTah[0].souradnice:
+                               nejlepsiTah = tah
+                        else:
+                            if tah[0].souradnice > nejlepsiTah[0].souradnice:
+                               nejlepsiTah = tah
+                hra.dvojKostka.seznamHodnot.remove(abs(nejlepsiTah[0].souradnice - nejlepsiTah[1].souradnice) )
+                #TODO udělat funkci pohni Kamen
+                hra.pohniKamen(nejlepsiTah[0], nejlepsiTah[1])
+
+        def osamocenyKamen(self, hra : Hra, tah : tuple) -> bool:
+            vybranePolicko = hra.herniPole[tah[0].souradnice]
+            if vybranePolicko is Policko:
+                return False
+            return vybranePolicko.daSeSebratKamen()
+
+
                      
-
 '''
-hra = Hra(Hrac("white_front_side.png"),Hrac("white_front_side.png"))
-
+ai = AIHrac("red_front_side.png")
+hra = Hra(ai,Hrac("white_front_side.png"))
+hra.dvojKostka.hod()
+hra.dvojKostka.seznamHodnot.clear()
+hra.dvojKostka.seznamHodnot.append(5)
+hra.dvojKostka.seznamHodnot.append(6)
+print(hra.dvojKostka.seznamHodnot)
+ai.hraj(hra)
 hra.prepniHrace()
+'''
+'''
+print(hra.maHracKamenyVeCtvrtymSegmentu(hra.aktualniHrac))
 kostky = (4,4,4,4)
 print(kostky)
 moznosti = hra.vypisTahyPolicek(kostky)
