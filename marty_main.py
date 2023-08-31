@@ -14,6 +14,19 @@ width, height = 1920, 1080
 screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Kaminky")
 
+background_image = pygame.image.load("hraci_plocha_komplet.jpg")  # Nahrání obrázku pozadí
+background_image = pygame.transform.scale(background_image, (width, height))  # Přizpůsobení rozměrů okna
+
+menu_image = pygame.image.load("menu_background.png")
+menu_image = pygame.transform.scale(menu_image, (width, height))
+
+
+vykreslovaci_group =  pygame.sprite.Group()
+vybranePolicko = None
+
+clovekHrac = Hrac( "red_front_side.png",vykreslovaci_group)
+hra = Hra(clovekHrac,Hrac( "white_front_side.png",vykreslovaci_group), vykreslovaci_group)
+
 class Menu:
     def __init__(self):
         self.status = True
@@ -25,13 +38,9 @@ class Menu:
 
     def ZmenStatus(self):
         self.status = False
-        print("Button pressed!")
-        try:
-            self.zacnihruAI.hide()
-            self.zacnihruPlayer.hide()
-            self.rollbutton.show()
-        except:
-            pass
+
+        for i in self.buttons:
+            i.hide()
 
     def AIButton(self):
         self.buttons.append(Button(
@@ -52,6 +61,8 @@ class Menu:
         radius=20,  # Radius of border corners (leave empty for not curved)
         onClick=self.ZmenStatus
         ))
+        print("Jsem AIButton!")
+
 
     def ProtiHraciButton(self):
         self.buttons.append(Button(
@@ -72,15 +83,16 @@ class Menu:
         radius=20,  # Radius of border corners (leave empty for not curved)
         onClick= self.ZmenStatus
         ))
+        print("Jsem ProtiHracButton!")
 
     def RollDice(self):
         self.rollbutton = Button(
         # Mandatory Parameters
         screen,  # Surface to place button on
         (width-600)/2,  # X-coordinate of top left corner
-        (height-100)/2,  # Y-coordinate of top left corner
+        50,  # Y-coordinate of top left corner
         600,  # Width
-        100,  # Height
+        50,  # Height
 
         # Optional Parameters
         text='Hoď kostkou',  # Text to display
@@ -92,7 +104,11 @@ class Menu:
         radius=20,  # Radius of border corners (leave empty for not curved)
         onClick=hra.dvojKostka.hod
         )
+
+        self.ZmenStatus()
         self.buttons.append(self.rollbutton)
+
+        print("Zmackl jsem kostky!!")
 
 class InfoInGame:
     def __init__(self):
@@ -106,25 +122,40 @@ class InfoInGame:
         text_surface = font.render(self.text, True, (255, 255, 255))
         screen.blit(text_surface, (100, 50))
 
+#----------------------------------------------------------------------------
+class GlowTahy:
+    def __init__(self):
+        self.image = None
+        self.pole = []
 
-background_image = pygame.image.load("hraci_plocha_komplet.jpg")  # Nahrání obrázku pozadí
-background_image = pygame.transform.scale(background_image, (width, height))  # Přizpůsobení rozměrů okna
+    def NajdiPole(self, hra, kostky):
+        tahy = set(hra.vypisTahyPolicek(kostky)) #pryč duplicity
+        for index, pole in tahy:
+            print(pole.pozice)
+            self.pole.append(pole.pozice)
 
+        self.VyznacPole(self.pole)
+        return self.pole
+    def VyznacPole(self, pole: list):
+        for g_pole in hra.herniPole:
+            print(g_pole.pozice)
+            for i in pole:
+                print(i)
+                if g_pole.pozice == i: #průnik tak budu higlightovat
+                    pass
+                    #tak highlight
 
-menu_image = pygame.image.load("menu_background.png")
-menu_image = pygame.transform.scale(menu_image, (width, height))
-
-
-vykreslovaci_group =  pygame.sprite.Group()
-vybranePolicko = None
-
-
-clovekHrac = Hrac( "red_front_side.png",vykreslovaci_group)
-hra = Hra(clovekHrac,Hrac( "white_front_side.png",vykreslovaci_group), vykreslovaci_group)
 menu = Menu()
 info = InfoInGame()
 info.InfoKostky("Čau")
 
+glow = GlowTahy()
+glow.NajdiPole(hra, [6, 6, 6, 6])
+
+menu = Menu()
+info = InfoInGame()
+info.InfoKostky("Čau")
+#----------------------------------------------------------------------------
 
 for policko in hra.herniPole:
     for policko_kamen in policko.kameny:
@@ -139,7 +170,6 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if hra.hracNaRade(clovekHrac):
                 menu.RollDice()
@@ -164,7 +194,6 @@ while running:
 
     if menu.status:
         screen.blit(menu_image, (0, 0))
-        pygame_widgets.update(event)
 
         for button in menu.buttons:
             button.listen(event)
