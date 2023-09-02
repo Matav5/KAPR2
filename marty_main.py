@@ -3,7 +3,7 @@ import pygame
 import pygame_widgets
 from pygame_widgets.button import Button
 from pygame_widgets.textbox import TextBox
-from matav import Policko, Kamen, Hra, Hrac, Pozice
+from jv_matav import Policko, Kamen, Hra, Hrac
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -36,9 +36,11 @@ class Menu:
         self.rollbutton = None
 
     def ZmenStatus(self):
+        print("Jsem v ZmenStatus!")
         self.status = False
         for i in self.buttons:
             i.hide()
+        menu.RollDice()
 
     def AIButton(self):
         self.buttons.append(Button(
@@ -59,7 +61,7 @@ class Menu:
         radius=20,  # Radius of border corners (leave empty for not curved)
         onClick=self.ZmenStatus
         ))
-        print("Jsem AIButton!")
+        print("Vytvořil jsem AIButton!")
 
 
     def ProtiHraciButton(self):
@@ -79,9 +81,9 @@ class Menu:
         hoverColour=(150, 0, 0),  # Colour of button when being hovered over
         pressedColour=(233, 200, 20),  # Colour of button when being clicked
         radius=20,  # Radius of border corners (leave empty for not curved)
-        onClick= self.ZmenStatus
+        onClick=self.ZmenStatus
         ))
-        print("Jsem ProtiHracButton!")
+        print("Vytvořil jsem ProtiHracButton!")
 
     def RollDice(self):
         self.rollbutton = Button(
@@ -100,27 +102,34 @@ class Menu:
         hoverColour=(150, 0, 0),  # Colour of button when being hovered over
         pressedColour=(233, 200, 20),  # Colour of button when being clicked
         radius=20,  # Radius of border corners (leave empty for not curved)
-        onClick=hra.dvojKostka.hod()
+        onClick=hra.dvojKostka.hod
         )
-
-        for _ in self.buttons:
-            self.buttons.remove(_)
-
-        self.ZmenStatus()
         self.buttons.append(self.rollbutton)
-        print("Zmackl jsem hod kostkou!")
+        print("Vytvořil jsem hod kostkou!")
 
 class InfoInGame:
     def __init__(self):
-        self.text = ""
+        self.textKotka = ""
+        self.textHra = ""
+
     def InfoKostky(self, vstup):
-        self.text = vstup
+        text = "KOSTKY: "
+        for i in vstup:
+            text += " | "+str(i)+ " | "
+        self.textKostka = text
+
     def InfoHra(self, vstup):
-        self.text = vstup
-    def ZobrazText(self, screen):
+        self.textHra = "Hrac: " + str(vstup)
+
+    def ZobrazTextKostka(self, screen):
         font = pygame.font.Font(None, 30)
-        text_surface = font.render(self.text, True, (255, 255, 255))
+        text_surface = font.render(self.textKostka, True, (255, 255, 255))
         screen.blit(text_surface, (100, 50))
+
+    def ZobrazTextHra(self, screen):
+        font = pygame.font.Font(None, 30)
+        text_surface = font.render(self.textHra, True, (0, 0, 0))
+        screen.blit(text_surface, (100, 100))
 
 #----------------------------------------------------------------------------
 class GlowTahy:
@@ -130,39 +139,74 @@ class GlowTahy:
         self.rect1 = self.imageUp.get_rect()
         self.rect2 = self.imageDown.get_rect()
         self.pole = []
+        self.rect_to_print = []
+        self.printed_rect = []
 
-    def NajdiPole(self, hra, list):
-        tahy = set(hra.vypisTahyPolicek(list)) #pryč duplicity
+    def NajdiPole(self, hra):
+        self.pole.clear()
+        self.rect_to_print.clear()
 
-        for index, pole in tahy:
-            self.pole.append(pole.pozice)
+        if hra.kliknutePole != None:
+            print("Vybrane pole existuje!")
 
-        return self.pole
+            print(f"Vybrane policko {hra.kliknutePole}")
+            tahy = hra.vypisTah(hra.dvojKostka.seznamHodnot, hra.kliknutePole.souradnice)
+            print(f"NAŠLÉ TAHY PRO POLE: {tahy}")
+
+            for pole in tahy:
+                pole = pole.policko.pozice
+                print(pole)
+                #print(f"NENÍ NONE: {pole}")
+
+                if pole.y > 500:
+                    new_rect = self.rect1.copy()
+                    new_rect.centerx = pole.x  # Nastavte nový střed X
+                    new_rect.centery = pole.y  # Nastavte nový střed Y
+                    self.rect_to_print.append((self.imageUp, new_rect))
+
+                else:
+                    new_rect = self.rect2.copy()
+                    new_rect.centerx = pole.x  # Nastavte nový střed X
+                    new_rect.centery = pole.y  # Nastavte nový střed Y
+                    self.rect_to_print.append((self.imageDown, new_rect))
+
+                self.pole.append(pole)
+
+        else:
+            tahy = hra.vypisTahyPolicek(hra.dvojKostka.seznamHodnot)
+
+            for pole in tahy:
+                #print(f"JE NONE: {pole}")
+                pole = hra.herniPole[pole.kamen.souradnice].pozice
+                #print(f"SOURADNICE: ({pole.x},{pole.y}) souradnice")
+                if pole.y > 500:
+                    new_rect = self.rect1.copy()
+                    new_rect.centerx = pole.x  # Nastavte nový střed X
+                    new_rect.centery = pole.y  # Nastavte nový střed Y
+                    self.rect_to_print.append((self.imageUp, new_rect))
+
+                else:
+                    new_rect = self.rect2.copy()
+                    new_rect.centerx = pole.x  # Nastavte nový střed X
+                    new_rect.centery = pole.y  # Nastavte nový střed Y
+                    self.rect_to_print.append((self.imageDown, new_rect))
+
+                self.pole.append(pole)
+
+        return self.pole, self.rect_to_print
 
     def ZobrazPole(self, surface):
-        for pos in self.pole:
-            if pos.y > 500:
-                new_rect = self.rect1.copy()
-                new_rect.centerx = pos.x  # Nastavte nový střed X
-                new_rect.centery = pos.y  # Nastavte nový střed Y
-                surface.blit(self.imageUp, new_rect)
+        for rec in self.rect_to_print:
+            x = surface.blit(rec[0], rec[1])
+            self.printed_rect.append(x)
+            lambda: x
 
-            else:
-                new_rect = self.rect2.copy()
-                new_rect.centerx = pos.x  # Nastavte nový střed X
-                new_rect.centery = pos.y  # Nastavte nový střed Y
-                surface.blit(self.imageDown, new_rect)
-
-menu = Menu()
 info = InfoInGame()
-info.InfoKostky("Čau")
-
-
+info.InfoHra(hra.aktualniHrac)
 glow = GlowTahy('glow_tahy_up.png', 'glow_tahy_down.png')
-glow.NajdiPole(hra, hra.dvojKostka.seznamHodnot)
-
 menu = Menu()
-info = InfoInGame()
+
+print(f"SEZNAM TLAČÍTEK: {menu.buttons}")
 #----------------------------------------------------------------------------
 
 for policko in hra.herniPole:
@@ -172,59 +216,49 @@ for policko in hra.herniPole:
 for policko in hra.herniPole:
     vykreslovaci_group.add(policko)
 
+glow.NajdiPole(hra)
 
+#----------------------------------------------------------------------------
 running = True
+
 while running:
+
     for event in pygame.event.get():
+        glow.NajdiPole(hra)
+        for button in menu.buttons:
+            button.listen(event)
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if hra.hracNaRade(clovekHrac):
-                menu.RollDice()
-                for sprite in vykreslovaci_group:
-                    if sprite.rect.collidepoint(event.pos):
-                        if type(sprite) is Policko:
-                            if vybranePolicko != sprite:
-                                if vybranePolicko != None:
-                                    odebranyKamen = vybranePolicko.odeberKamen()
-                                    if odebranyKamen != None:
-                                        sprite.pridejKamen(odebranyKamen)
-                                        print(vybranePolicko.souradnice)
-                                        vybranePolicko = None
-                                    else:
-                                        print(vybranePolicko.souradnice)
-                                else:
-                                    vybranePolicko = None
+        if event.type == pygame.MOUSEBUTTONDOWN:
 
-                        if type(sprite) is Kamen:
-                            print("Kamen")
-                            vybranePolicko = None
+            hra.update(event)
 
     if menu.status:
         screen.blit(menu_image, (0, 0))
 
         for button in menu.buttons:
-            button.listen(event)
             button.draw()
 
     else:
         screen.blit(background_image, (0, 0))
+
+    if not menu.status:
+        menu.rollbutton.draw()
+        glow.ZobrazPole(screen)
+
+        info.InfoKostky(hra.dvojKostka.seznamHodnot)
+        info.InfoHra(hra.aktualniHrac)
+
+        info.ZobrazTextKostka(screen)
+        info.ZobrazTextHra(screen)
 
         try:
             vykreslovaci_group.draw(screen)
         except:
             pass
 
-    # Vykreslení tlačítka pro hod kostkou
-    if not menu.status:
-        menu.rollbutton.listen(event)
-        menu.rollbutton.draw()
-
-        glow.ZobrazPole(screen)
-
-        info.ZobrazText(screen)
-
     pygame.display.flip()
     clock.tick(60)
+    pygame_widgets.update(event)
 
 pygame.quit()
