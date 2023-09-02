@@ -3,7 +3,7 @@ import pygame
 import pygame_widgets
 from pygame_widgets.button import Button
 from pygame_widgets.textbox import TextBox
-from jv_matav import Policko, Kamen, Hra, Hrac
+from jv_matav import Policko, Kamen, Hra, AIHrac, Hrac
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -23,9 +23,10 @@ menu_image = pygame.transform.scale(menu_image, (width, height))
 vykreslovaci_group =  pygame.sprite.Group()
 vybranePolicko = None
 
+#----------------------------------------------------------
 clovekHrac = Hrac( "red_front_side.png",vykreslovaci_group)
 hra = Hra(clovekHrac,Hrac( "white_front_side.png",vykreslovaci_group), vykreslovaci_group)
-
+#----------------------------------------------------------
 class Menu:
     def __init__(self):
         self.status = True
@@ -35,12 +36,27 @@ class Menu:
         self.playerbutton = self.ProtiHraciButton()
         self.rollbutton = None
 
-    def ZmenStatus(self):
-        print("Jsem v ZmenStatus!")
+    def ZapniAI(self):
+        print("Jsem v ZapniAI!")
         self.status = False
         for i in self.buttons:
             i.hide()
         menu.RollDice()
+        ai = AIHrac("red_front_side.png")
+        hra = Hra(ai,Hrac("white_front_side.png"))
+        return hra
+
+
+    def ZapniHrace(self):
+        print("Jsem v ZapniHrace!")
+        self.status = False
+        for i in self.buttons:
+            i.hide()
+        menu.RollDice()
+        clovekHrac = Hrac( "red_front_side.png",vykreslovaci_group)
+        hra = Hra(clovekHrac,Hrac( "white_front_side.png",vykreslovaci_group), vykreslovaci_group)
+        return hra
+
 
     def AIButton(self):
         self.buttons.append(Button(
@@ -59,7 +75,7 @@ class Menu:
         hoverColour=(150, 0, 0),  # Colour of button when being hovered over
         pressedColour=(233, 200, 20),  # Colour of button when being clicked
         radius=20,  # Radius of border corners (leave empty for not curved)
-        onClick=self.ZmenStatus
+        onClick=self.ZapniAI
         ))
         print("Vytvořil jsem AIButton!")
 
@@ -81,9 +97,10 @@ class Menu:
         hoverColour=(150, 0, 0),  # Colour of button when being hovered over
         pressedColour=(233, 200, 20),  # Colour of button when being clicked
         radius=20,  # Radius of border corners (leave empty for not curved)
-        onClick=self.ZmenStatus
+        onClick=self.ZapniHrace
         ))
         print("Vytvořil jsem ProtiHracButton!")
+
 
     def RollDice(self):
         self.rollbutton = Button(
@@ -93,6 +110,7 @@ class Menu:
         50,  # Y-coordinate of top left corner
         600,  # Width
         50,  # Height
+
 
         # Optional Parameters
         text='Hoď kostkou',  # Text to display
@@ -107,10 +125,12 @@ class Menu:
         self.buttons.append(self.rollbutton)
         print("Vytvořil jsem hod kostkou!")
 
+
 class InfoInGame:
     def __init__(self):
         self.textKotka = ""
         self.textHra = ""
+
 
     def InfoKostky(self, vstup):
         text = "KOSTKY: "
@@ -118,13 +138,16 @@ class InfoInGame:
             text += " | "+str(i)+ " | "
         self.textKostka = text
 
+
     def InfoHra(self, vstup):
         self.textHra = "Hrac: " + str(vstup)
+
 
     def ZobrazTextKostka(self, screen):
         font = pygame.font.Font(None, 30)
         text_surface = font.render(self.textKostka, True, (255, 255, 255))
         screen.blit(text_surface, (100, 50))
+
 
     def ZobrazTextHra(self, screen):
         font = pygame.font.Font(None, 30)
@@ -132,12 +155,13 @@ class InfoInGame:
         screen.blit(text_surface, (100, 100))
 #----------------------------------------------------------------------------
 class GlowTahy:
-    def __init__(self, image_pathUp, image_pathDown):
+    def __init__(self, image_pathUp, image_pathDown, image_Domecek):
         self.imageUp = pygame.image.load(image_pathUp)
         self.imageDown = pygame.image.load(image_pathDown)
+        self.imageDomecek = pygame.image.load(image_Domecek)
         self.rect1 = self.imageUp.get_rect()
         self.rect2 = self.imageDown.get_rect()
-        self.rect3 = self.imageUp.get_rect()
+        self.rect3 = self.imageDomecek.get_rect()
         self.pole = []
         self.rect_to_print = []
         self.printed_rect = []
@@ -145,7 +169,7 @@ class GlowTahy:
     def NajdiPole(self, hra):
         self.pole.clear()
         self.rect_to_print.clear()
-#pokud je policko none, tak chci zvyraznit bar
+
         if hra.kliknutePole != None:
             print("Vybrane pole existuje!")
 
@@ -160,7 +184,7 @@ class GlowTahy:
                     new_rect = self.rect3.copy()
                     new_rect.centerx = pos_domecek.x  # Nastavte nový střed X
                     new_rect.centery = pos_domecek.y  # Nastavte nový střed Y
-                    self.rect_to_print.append((self.imageUp, new_rect))
+                    self.rect_to_print.append((self.imageDomecek, new_rect))
                     continue
 
                 pole = pole.policko.pozice
@@ -211,8 +235,7 @@ class GlowTahy:
             lambda: x
 
 info = InfoInGame()
-info.InfoHra(hra.aktualniHrac)
-glow = GlowTahy('glow_tahy_up.png', 'glow_tahy_down.png')
+glow = GlowTahy('glow_tahy_up.png', 'glow_tahy_down.png', 'domecek.png')
 menu = Menu()
 
 print(f"SEZNAM TLAČÍTEK: {menu.buttons}")
@@ -225,7 +248,10 @@ for policko in hra.herniPole:
 for policko in hra.herniPole:
     vykreslovaci_group.add(policko)
 
-glow.NajdiPole(hra)
+try:
+    glow.NajdiPole(hra)
+except:
+    pass
 
 #----------------------------------------------------------------------------
 running = True
@@ -255,11 +281,14 @@ while running:
         menu.rollbutton.draw()
         glow.ZobrazPole(screen)
 
-        info.InfoKostky(hra.dvojKostka.seznamHodnot)
-        info.InfoHra(hra.aktualniHrac)
+        try:
+            info.InfoKostky(hra.dvojKostka.seznamHodnot)
+            info.InfoHra(hra.aktualniHrac)
 
-        info.ZobrazTextKostka(screen)
-        info.ZobrazTextHra(screen)
+            info.ZobrazTextKostka(screen)
+            info.ZobrazTextHra(screen)
+        except:
+            print("Kein Info")
 
         try:
             vykreslovaci_group.draw(screen)
