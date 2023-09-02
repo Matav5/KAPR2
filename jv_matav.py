@@ -227,7 +227,7 @@ class Hra:
         self.vygenerujPole()
         self.vlozKameny()
         self.mozneTahy = []
-        self.kliknutePole = Policko
+        self.kliknutePole = None
 
         # Implementovat rozhodnutí pořadí kostkou
         self.aktualniHrac = cervenyHrac
