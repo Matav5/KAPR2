@@ -130,7 +130,6 @@ class InfoInGame:
         font = pygame.font.Font(None, 30)
         text_surface = font.render(self.textHra, True, (0, 0, 0))
         screen.blit(text_surface, (100, 100))
-
 #----------------------------------------------------------------------------
 class GlowTahy:
     def __init__(self, image_pathUp, image_pathDown):
@@ -138,6 +137,7 @@ class GlowTahy:
         self.imageDown = pygame.image.load(image_pathDown)
         self.rect1 = self.imageUp.get_rect()
         self.rect2 = self.imageDown.get_rect()
+        self.rect3 = self.imageUp.get_rect()
         self.pole = []
         self.rect_to_print = []
         self.printed_rect = []
@@ -145,7 +145,7 @@ class GlowTahy:
     def NajdiPole(self, hra):
         self.pole.clear()
         self.rect_to_print.clear()
-
+#pokud je policko none, tak chci zvyraznit bar
         if hra.kliknutePole != None:
             print("Vybrane pole existuje!")
 
@@ -154,6 +154,15 @@ class GlowTahy:
             print(f"NAŠLÉ TAHY PRO POLE: {tahy}")
 
             for pole in tahy:
+                if pole.policko is None:
+                    pos_domecek = pole.kamen.hrac.domecek.pozice
+
+                    new_rect = self.rect3.copy()
+                    new_rect.centerx = pos_domecek.x  # Nastavte nový střed X
+                    new_rect.centery = pos_domecek.y  # Nastavte nový střed Y
+                    self.rect_to_print.append((self.imageUp, new_rect))
+                    continue
+
                 pole = pole.policko.pozice
                 print(pole)
                 #print(f"NENÍ NONE: {pole}")
