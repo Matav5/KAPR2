@@ -365,12 +365,13 @@ class Hra:
                     cil += hodnota
                     if cil == -1 or cil == 24:
                         tah.kamen.hrac.domecek.schovejKamen(tah.kamen)
+                        self.dvojKostka.seznamHodnot.remove(hodnota)
                     else:
                         pole_cil = self.herniPole[cil]
                         if pole_cil.maKamen() and len(pole_cil.kameny) == 1:
                             pole_cil.odeberKamen()
-                            pole_cil.pridejKamen(tah.kamen)
-                    self.dvojKostka.seznamHodnot.remove(hodnota)
+                        pole_cil.pridejKamen(tah.kamen)
+                        self.dvojKostka.seznamHodnot.remove(hodnota)
 
 
 
