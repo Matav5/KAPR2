@@ -1,4 +1,4 @@
-
+import time
 from collections import deque
 from numbers import Number
 from typing import List
@@ -345,25 +345,26 @@ class Hra:
             self.aktualniHrac = self.cervenyHrac
         # TODO Pokud hráč bude AIHrac => zavolá funkci Hraj(hra)
 
-    def pohniKamen(self, kamen: Kamen, cil: Policko):
+    def pohniKamen(self, tah : Tah):
         # TODO dodělat sčítání hodnot do hodnoty kostky -- sčítání provádět vždy -- cyklus na pohyb o range podle sčítání
         # TODO MYSLET NA TO ŽE KAMENY SE HÝBOU!
-        print(f'Typ cíl: {type(cil)}, {type(kamen)}')
-        rozdilPozic = abs(cil.souradnice - kamen.souradnice)
-        print(rozdilPozic)
-        vybranaHodnota = 0
+        print(f'Typ cíl: {tah}')
         # Pro každou hodnotu v kostce
-        for hodnota in self.dvojKostka.seznamHodnot:
-            if hodnota == rozdilPozic:
-                self.dvojKostka.seznamHodnot.remove(hodnota)
-                self.kliknutePole.odeberKamen()
-                cil.pridejKamen(kamen)
-                print(f'{self.dvojKostka.seznamHodnot} Povedlo se!')
-                # Porovnám, zda je menší než rozdíl pozic (0->5) -> 0<=5
-                print(f'Hodnota je {hodnota} rozdíl pozic je {rozdilPozic}')
+        if tah.kamen.souradnice == self.kliknutePole.souradnice:
+            print(f"Odebírám kámen")
+            odebranyKamen = self.kliknutePole.odeberKamen()
+            if odebranyKamen == tah.kamen:
+                cil = tah.kamen.souradnice
+                for hodnota in tah.pohyby:
+                    print(f"Hýbu s kamenem")
+                    cil += hodnota
+                    pole_cil = self.herniPole[cil]
+                    if pole_cil.maKamen() and len(pole_cil.kameny) == 1:
+                        pole_cil.odeberKamen()
+                    pole_cil.pridejKamen(tah.kamen)
+                    self.dvojKostka.seznamHodnot.remove(hodnota)
 
-            print("Porovnávám rozdíl pozic a pokusím se odebrat kámen a přidat nový na přechodné políčko (pohybujeme se..)")
-            print(f'{vybranaHodnota}')
+
 
 
         '''
@@ -382,27 +383,31 @@ class Hra:
         for group in self.groups:
             for sprite in group:
                 if sprite.rect.collidepoint(event.pos):
-                    if type(sprite) is Policko and not self.aktualniHrac.bar.maKamen() and self.kliknutePole is not None:
-                        for policko in self.herniPole:
-                            if policko.rect.collidepoint(event.pos) and policko.maKamen():
-                                self.kliknutePole = policko
-                                self.mozneTahy = self.vypisTah(self.dvojKostka.seznamHodnot,
-                                                               self.kliknutePole.souradnice)
-                                print(
-                                    f"Políčko !! {type(sprite)}, myška x: {event.pos}\n Políčko: {self.kliknutePole.souradnice}")
-                                break
+                    if type(sprite) is Policko and not self.aktualniHrac.bar.maKamen() and self.kliknutePole is None:
+                        if sprite.vlastnikPolicka() == self.aktualniHrac:
+                            for policko in self.herniPole:
+                                if policko.rect.collidepoint(event.pos) and policko.maKamen():
+                                    self.kliknutePole = policko
+                                    self.mozneTahy = self.vypisTah(self.dvojKostka.seznamHodnot,
+                                                                   self.kliknutePole.souradnice)
+                                    print(
+                                        f"Políčko !! {type(sprite)}, myška x: {event.pos}\n Políčko: {self.kliknutePole.souradnice}")
+                                    break
                     # myslel jsem si, že se podívám, zda mám nakliknuté políčko a poté pokud jsem kliknul na cokoli jiného, co není v množině možné tahy
                     # tak se vrátím zpět
-                    if self.kliknutePole is Policko and any(sprite not in tup for tup in self.mozneTahy):
-                        print(f"Vracím se!")
-                        break
-                    if type(sprite) is Policko and len(self.mozneTahy) > 0 and any(sprite == tah.policko for tah in self.mozneTahy):
-                        for novePolicko in self.herniPole:
-                            if novePolicko.rect.collidepoint(event.pos):
-                                kamen = self.kliknutePole.posledniKamen()
-                                cil = novePolicko
+                    if self.kliknutePole is Policko:
+                        for tah in self.mozneTahy:
+                            if sprite != tah.policko:
+                                self.kliknutePole = None
+                                print(f"Vracím se!")
+                                break
+                    if type(sprite) is Policko and len(self.mozneTahy) > 0 and self.kliknutePole is not None:
+                        for tah in self.mozneTahy:
+                            if sprite == tah.policko:
                                 print("Pokusím se pohnout kamenem!")
-                                self.pohniKamen(kamen, cil)
+                                self.pohniKamen(tah)
+                                self.kliknutePole = None
+                                break
 
 
 
