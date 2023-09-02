@@ -8,6 +8,7 @@ from pygame.sprite import Group, Sprite
 from dice import HerniKostky
 from pygame.event import Event
 
+
 invisibleImage = pygame.Surface((32, 32), pygame.SRCALPHA)
 invisibleImage.fill((0, 0, 0, 0))
 
@@ -350,6 +351,17 @@ class Hra:
         return hrac == self.aktualniHrac
 
     def prepniHrace(self):
+        """
+        if AIHrac:
+            if self.aktualniHrac == AIHrac:
+                self.aktualniHrac = self.cervenyHrac
+
+            elif self.aktualniHrac == self.cervenyHrac:
+                self.aktualniHrac = AIHrac
+                self.dvojKostka.hod()
+                AIHrac.hraj(self)
+                """
+
         if self.aktualniHrac == self.cervenyHrac:
             self.aktualniHrac = self.bilyHrac
         else:
@@ -368,7 +380,7 @@ class Hra:
             cil = tah.kamen.souradnice
             for hodnota in tah.pohyby:
                 print(f"Hýbu s kamenem")
-                cil += hodnota
+                cil += abs(hodnota) * self.aktualniHrac.smer
                 if cil <= -1 or cil >= 24:
                     tah.kamen.hrac.domecek.schovejKamen(tah.kamen)
                     self.dvojKostka.seznamHodnot.remove(hodnota)
@@ -378,7 +390,8 @@ class Hra:
                         pole_cil.odeberKamen()
                     pole_cil.pridejKamen(tah.kamen)
                     self.dvojKostka.seznamHodnot.remove(hodnota)
-
+                    if len(self.dvojKostka.seznamHodnot) == 0:
+                        self.prepniHrace()
 
 
 
