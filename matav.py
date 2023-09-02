@@ -185,7 +185,8 @@ class Tah:
         self.kamen = kamen
         self.policko = policko
         self.pohyby = pohyby
-             
+    def __eq__(self, __value: object) -> bool:
+        return self.kamen == __value.kamen and self.policko == __value.policko and self.pohyby == __value.pohyby
 class Hra:
     '''
     Třída hry která při vytvoření vytvoří herní pole, vloží kameny a nastaví hráče podle parametrů -> bude sloužit jako základní stavební kámen hry
@@ -274,7 +275,9 @@ class Hra:
                 continue
             moznePolicko = self.herniPole[cil]
             if moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac:
-                moznePolicka.append(Tah(kamen,moznePolicko,kostka))
+                pohyby = list()
+                pohyby.append(kostka)
+                moznePolicka.append(Tah(kamen,moznePolicko,pohyby))
             else:
                 print(f"{kamen.souradnice} na pozici: {cil}  Vlastní Opponent: {moznePolicko.vlastnikPolicka() != None and moznePolicko.vlastnikPolicka() != kamen.hrac}")
 
@@ -285,23 +288,23 @@ class Hra:
                 if cil <= 0 or cil >= len(self.herniPole):
                     continue
                 moznePolicko = self.herniPole[cil]
-                if (moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac) and not (kamen,moznePolicko) in moznePolicka:
+                if (moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac) and not Tah(kamen,moznePolicko,kombinace) in moznePolicka:
                     moznePolicka.append(Tah(kamen,moznePolicko,kombinace))
                 else:
-                    print(f"{kamen.souradnice} na pozici: {cil}  Vlastní Opponent: {not(moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac)} a je v seznamu: {(kamen,moznePolicko) in moznePolicka}")
+                    print(f"{kamen.souradnice} na pozici: {cil}  Vlastní Opponent: {not(moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac)} a je v seznamu: {Tah(kamen,moznePolicko,kombinace) in moznePolicka}")
           
             kombinace = list()
-            for IndexKomboKostek in range(0, index, 1):
+            for IndexKomboKostek in range(0, index+1):
                 kombinace.append(kostky[IndexKomboKostek])
                 cil = policko + sum(kombinace) * kamen.hrac.smer
                 if cil <= 0 or cil >= len(self.herniPole):
                     continue
                 moznePolicko = self.herniPole[cil]
-                if (moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac) and not (kamen,moznePolicko) in moznePolicka:
+                if (moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac) and not Tah(kamen,moznePolicko,kombinace) in moznePolicka:
                     moznePolicka.append(Tah(kamen,moznePolicko,kombinace))
                 else:
-                    print(f"{kamen.souradnice} na pozici: {cil}  Vlastní Opponent: {not(moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac)} a je v seznamu: {(kamen,moznePolicko) in moznePolicka}")
-   
+                    print(f"{kamen.souradnice} na pozici: {cil}  Vlastní Opponent: {not(moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac)} a je v seznamu: {Tah(kamen,moznePolicko,kombinace) in moznePolicka}")
+
 
         return moznePolicka
 
@@ -424,18 +427,23 @@ hra.dvojKostka.seznamHodnot.clear()
 hra.dvojKostka.seznamHodnot.append(5)
 hra.dvojKostka.seznamHodnot.append(6)
 print(hra.dvojKostka.seznamHodnot)
-ai.hraj(hra)
-hra.prepniHrace()
+#ai.hraj(hra)
+#hra.prepniHrace()
 
 print(hra.maHracKamenyVeCtvrtymSegmentu(hra.aktualniHrac))
-kostky = (4,4,4,4)
-print(kostky)
-moznosti = hra.vypisTahyPolicek(kostky)
+
+moznosti = hra.vypisTahyPolicek(hra.dvojKostka.seznamHodnot)
 for moznost in moznosti:
-    print(f"{moznost[0].hrac} {moznost[0].souradnice} -> {moznost[1].souradnice}")
+    print(f"{moznost.kamen.hrac} {moznost.kamen.souradnice} -> {moznost.policko.souradnice} ({str(moznost.pohyby)})")
+hra.dvojKostka.seznamHodnot.clear()
+hra.dvojKostka.seznamHodnot.append(4)
+hra.dvojKostka.seznamHodnot.append(4)
+hra.dvojKostka.seznamHodnot.append(4)
+hra.dvojKostka.seznamHodnot.append(4)
+moznosti = hra.vypisTahyPolicek(hra.dvojKostka.seznamHodnot)
+for moznost in moznosti:
+    print(f"{moznost.kamen.hrac} {moznost.kamen.souradnice} -> {moznost.policko.souradnice} ({str(moznost.pohyby)})")
 '''
-
-
 
 '''
 hra.aktualniHrac.bar.vyrobKamen()
