@@ -309,7 +309,7 @@ class Hra:
                     print(f"{kamen.souradnice} na pozici: {cil}  Vlastní Opponent: {not(moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac)} a je v seznamu: {Tah(kamen,moznePolicko,kombinace) in moznePolicka}")
 
 
-        return moznePolicka
+        return set(moznePolicka)
 
     def hracNaRade(self,hrac) -> bool:
         return hrac == self.aktualniHrac
