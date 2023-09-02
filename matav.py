@@ -180,7 +180,12 @@ class Domecek(Sprite):
             )
     def ziskejPocet(self) -> Number:
         return len(self.kamenyVDomecku)
-        
+class Tah:
+    def __init__(self,kamen : Kamen,policko : Policko, pohyby : list) -> None:
+        self.kamen = kamen
+        self.policko = policko
+        self.pohyby = pohyby
+             
 class Hra:
     '''
     Třída hry která při vytvoření vytvoří herní pole, vloží kameny a nastaví hráče podle parametrů -> bude sloužit jako základní stavební kámen hry
@@ -269,19 +274,31 @@ class Hra:
                 continue
             moznePolicko = self.herniPole[cil]
             if moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac:
-                moznePolicka.append((kamen,moznePolicko))
+                moznePolicka.append(Tah(kamen,moznePolicko,kostka))
             else:
                 print(f"{kamen.souradnice} na pozici: {cil}  Vlastní Opponent: {moznePolicko.vlastnikPolicka() != None and moznePolicko.vlastnikPolicka() != kamen.hrac}")
 
-            kombinace = 0
+            kombinace = list()
             for IndexKomboKostek in range(index,-1,-1):
-                kombinace += kostky[IndexKomboKostek]
-                cil = policko + kombinace * kamen.hrac.smer
+                kombinace.append(kostky[IndexKomboKostek])
+                cil = policko + sum(kombinace) * kamen.hrac.smer
                 if cil <= 0 or cil >= len(self.herniPole):
                     continue
                 moznePolicko = self.herniPole[cil]
                 if (moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac) and not (kamen,moznePolicko) in moznePolicka:
-                    moznePolicka.append((kamen,moznePolicko))
+                    moznePolicka.append(Tah(kamen,moznePolicko,kombinace))
+                else:
+                    print(f"{kamen.souradnice} na pozici: {cil}  Vlastní Opponent: {not(moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac)} a je v seznamu: {(kamen,moznePolicko) in moznePolicka}")
+          
+            kombinace = list()
+            for IndexKomboKostek in range(0, index, 1):
+                kombinace.append(kostky[IndexKomboKostek])
+                cil = policko + sum(kombinace) * kamen.hrac.smer
+                if cil <= 0 or cil >= len(self.herniPole):
+                    continue
+                moznePolicko = self.herniPole[cil]
+                if (moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac) and not (kamen,moznePolicko) in moznePolicka:
+                    moznePolicka.append(Tah(kamen,moznePolicko,kombinace))
                 else:
                     print(f"{kamen.souradnice} na pozici: {cil}  Vlastní Opponent: {not(moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac)} a je v seznamu: {(kamen,moznePolicko) in moznePolicka}")
    
@@ -359,19 +376,19 @@ class AIHrac(Hrac):
                 nejlepsiTah = tahy[0] 
                 for tah in tahy:
                     #Zjistí jestli tah má v cíli protivníka který má jen jeden kámen => pokud ano ihned se tam pohne a pokračuje dalším tahem
-                    if tah[1].vlastnikPolicka != self and tah[1].daSeSebratKamen():
+                    if tah.policko.vlastnikPolicka != self and tah.policko.daSeSebratKamen():
                         nejlepsiTah = tah
                         break
                     #Pokud má všechny kameny na konci => snaží se ty nejvzdálenější možné kameny nacpat do domečku
                     elif hra.maHracKamenyVeCtvrtymSegmentu(self):
                         #smer 1 od shora dolů
                         if self.smer == 1:
-                            if nejlepsiTah.souradnice <= 23 and nejlepsiTah[1].souradnice < tah[1].souradnice:
+                            if nejlepsiTah.souradnice <= 23 and nejlepsiTah.policko.souradnice < tah.policko.souradnice:
                                 nejlepsiTah = tah
                                 if nejlepsiTah >= 24:
                                     break
                         else:
-                             if nejlepsiTah.souradnice >= 0 and nejlepsiTah[1].souradnice > tah[1].souradnice:
+                             if nejlepsiTah.souradnice >= 0 and nejlepsiTah.policko.souradnice > tah.policko.souradnice:
                                 nejlepsiTah = tah
                                 if nejlepsiTah <= 0:
                                     break
@@ -382,17 +399,17 @@ class AIHrac(Hrac):
                     #Pokud nic jiného nevyjde
                     else:
                         if self.smer == 1:
-                           if tah[0].souradnice < nejlepsiTah[0].souradnice:
+                           if tah.kamen.souradnice < nejlepsiTah.kamen.souradnice:
                                nejlepsiTah = tah
                         else:
-                            if tah[0].souradnice > nejlepsiTah[0].souradnice:
+                            if tah.kamen.souradnice > nejlepsiTah.kamen.souradnice:
                                nejlepsiTah = tah
-                hra.dvojKostka.seznamHodnot.remove(abs(nejlepsiTah[0].souradnice - nejlepsiTah[1].souradnice) )
+                hra.dvojKostka.seznamHodnot.remove(abs(nejlepsiTah.kamen.souradnice - nejlepsiTah.policko.souradnice) )
                 #TODO udělat funkci pohni Kamen
-                hra.pohniKamen(nejlepsiTah[0], nejlepsiTah[1])
+                hra.pohniKamen(nejlepsiTah.kamen, nejlepsiTah.policko)
 
         def osamocenyKamen(self, hra : Hra, tah : tuple) -> bool:
-            vybranePolicko = hra.herniPole[tah[0].souradnice]
+            vybranePolicko = hra.herniPole[tah.kamen.souradnice]
             if vybranePolicko is Policko:
                 return False
             return vybranePolicko.daSeSebratKamen()
@@ -409,8 +426,7 @@ hra.dvojKostka.seznamHodnot.append(6)
 print(hra.dvojKostka.seznamHodnot)
 ai.hraj(hra)
 hra.prepniHrace()
-'''
-'''
+
 print(hra.maHracKamenyVeCtvrtymSegmentu(hra.aktualniHrac))
 kostky = (4,4,4,4)
 print(kostky)
@@ -418,6 +434,7 @@ moznosti = hra.vypisTahyPolicek(kostky)
 for moznost in moznosti:
     print(f"{moznost[0].hrac} {moznost[0].souradnice} -> {moznost[1].souradnice}")
 '''
+
 
 
 '''
