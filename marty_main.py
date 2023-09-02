@@ -20,7 +20,6 @@ background_image = pygame.transform.scale(background_image, (width, height))  # 
 menu_image = pygame.image.load("menu_background.png")
 menu_image = pygame.transform.scale(menu_image, (width, height))
 
-
 vykreslovaci_group =  pygame.sprite.Group()
 vybranePolicko = None
 
@@ -38,7 +37,6 @@ class Menu:
 
     def ZmenStatus(self):
         self.status = False
-
         for i in self.buttons:
             i.hide()
 
@@ -102,13 +100,15 @@ class Menu:
         hoverColour=(150, 0, 0),  # Colour of button when being hovered over
         pressedColour=(233, 200, 20),  # Colour of button when being clicked
         radius=20,  # Radius of border corners (leave empty for not curved)
-        onClick=hra.dvojKostka.hod
+        onClick=hra.dvojKostka.hod()
         )
+
+        for _ in self.buttons:
+            self.buttons.remove(_)
 
         self.ZmenStatus()
         self.buttons.append(self.rollbutton)
-
-        print("Zmackl jsem kostky!!")
+        print("Zmackl jsem hod kostkou!")
 
 class InfoInGame:
     def __init__(self):
@@ -124,37 +124,45 @@ class InfoInGame:
 
 #----------------------------------------------------------------------------
 class GlowTahy:
-    def __init__(self):
-        self.image = None
+    def __init__(self, image_pathUp, image_pathDown):
+        self.imageUp = pygame.image.load(image_pathUp)
+        self.imageDown = pygame.image.load(image_pathDown)
+        self.rect1 = self.imageUp.get_rect()
+        self.rect2 = self.imageDown.get_rect()
         self.pole = []
 
-    def NajdiPole(self, hra, kostky):
-        tahy = set(hra.vypisTahyPolicek(kostky)) #pryč duplicity
+    def NajdiPole(self, hra, list):
+        tahy = set(hra.vypisTahyPolicek(list)) #pryč duplicity
+
         for index, pole in tahy:
-            print(pole.pozice)
             self.pole.append(pole.pozice)
 
-        self.VyznacPole(self.pole)
         return self.pole
-    def VyznacPole(self, pole: list):
-        for g_pole in hra.herniPole:
-            print(g_pole.pozice)
-            for i in pole:
-                print(i)
-                if g_pole.pozice == i: #průnik tak budu higlightovat
-                    pass
-                    #tak highlight
+
+    def ZobrazPole(self, surface):
+        for pos in self.pole:
+            if pos.y > 500:
+                new_rect = self.rect1.copy()
+                new_rect.centerx = pos.x  # Nastavte nový střed X
+                new_rect.centery = pos.y  # Nastavte nový střed Y
+                surface.blit(self.imageUp, new_rect)
+
+            else:
+                new_rect = self.rect2.copy()
+                new_rect.centerx = pos.x  # Nastavte nový střed X
+                new_rect.centery = pos.y  # Nastavte nový střed Y
+                surface.blit(self.imageDown, new_rect)
 
 menu = Menu()
 info = InfoInGame()
 info.InfoKostky("Čau")
 
-glow = GlowTahy()
-glow.NajdiPole(hra, [6, 6, 6, 6])
+
+glow = GlowTahy('glow_tahy_up.png', 'glow_tahy_down.png')
+glow.NajdiPole(hra, hra.dvojKostka.seznamHodnot)
 
 menu = Menu()
 info = InfoInGame()
-info.InfoKostky("Čau")
 #----------------------------------------------------------------------------
 
 for policko in hra.herniPole:
@@ -164,8 +172,8 @@ for policko in hra.herniPole:
 for policko in hra.herniPole:
     vykreslovaci_group.add(policko)
 
-running = True
 
+running = True
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -186,11 +194,11 @@ while running:
                                     else:
                                         print(vybranePolicko.souradnice)
                                 else:
-                                    vybranePolicko = sprite
+                                    vybranePolicko = None
 
-                            print("Poličko")
                         if type(sprite) is Kamen:
                             print("Kamen")
+                            vybranePolicko = None
 
     if menu.status:
         screen.blit(menu_image, (0, 0))
@@ -212,10 +220,11 @@ while running:
         menu.rollbutton.listen(event)
         menu.rollbutton.draw()
 
+        glow.ZobrazPole(screen)
+
         info.ZobrazText(screen)
 
     pygame.display.flip()
     clock.tick(60)
 
 pygame.quit()
-
