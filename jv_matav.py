@@ -365,11 +365,11 @@ class Hra:
                     cil += hodnota
                     if cil == -1 or cil == 24:
                         tah.kamen.hrac.domecek.schovejKamen(tah.kamen)
-                    pole_cil = self.herniPole[cil]
-                    if pole_cil.maKamen() and len(pole_cil.kameny) == 1:
-                        pole_cil.odeberKamen()
-
-                    pole_cil.pridejKamen(tah.kamen)
+                    else:
+                        pole_cil = self.herniPole[cil]
+                        if pole_cil.maKamen() and len(pole_cil.kameny) == 1:
+                            pole_cil.odeberKamen()
+                            pole_cil.pridejKamen(tah.kamen)
                     self.dvojKostka.seznamHodnot.remove(hodnota)
 
 
@@ -430,7 +430,7 @@ class Hra:
 
 
                     # TODO podivej se, jestli má hráč na tahu kameny na baru, pokud ano, neumožni mu hrát jiný kámen
-                    elif type(sprite) is Domecek and self.maHracKamenyVeCtvrtymSegmentu(self.aktualniHrac):  # Je to domeček
+                    elif type(sprite) is Domecek:  # Je to domeček
                         #TODO najít takový tah, který se rovná kliknutému políčku a má souřadnici -1/24
                         for tah in self.mozneTahy:
                             if tah.souradnice == -1 or tah.souradnice == 24:
