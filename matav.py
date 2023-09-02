@@ -187,6 +187,9 @@ class Tah:
         self.pohyby = pohyby
     def __eq__(self, __value: object) -> bool:
         return self.kamen == __value.kamen and self.policko == __value.policko and self.pohyby == __value.pohyby
+    def __hash__(self) -> int:
+        return hash((self.kamen, self.policko,tuple(self.pohyby)))
+
 class Hra:
     '''
     Třída hry která při vytvoření vytvoří herní pole, vloží kameny a nastaví hráče podle parametrů -> bude sloužit jako základní stavební kámen hry
@@ -260,7 +263,7 @@ class Hra:
                 continue
             else:
                moznePolicka.extend(self.vypisTah(kostky,index))
-        return moznePolicka
+        return set(moznePolicka)
 
     def vypisTah(self, kostky : list, policko : int) -> list():
         '''
@@ -419,7 +422,7 @@ class AIHrac(Hrac):
 
 
                      
-'''
+''''''
 ai = AIHrac("red_front_side.png")
 hra = Hra(ai,Hrac("white_front_side.png"))
 hra.dvojKostka.hod()
@@ -443,7 +446,7 @@ hra.dvojKostka.seznamHodnot.append(4)
 moznosti = hra.vypisTahyPolicek(hra.dvojKostka.seznamHodnot)
 for moznost in moznosti:
     print(f"{moznost.kamen.hrac} {moznost.kamen.souradnice} -> {moznost.policko.souradnice} ({str(moznost.pohyby)})")
-'''
+
 
 '''
 hra.aktualniHrac.bar.vyrobKamen()
