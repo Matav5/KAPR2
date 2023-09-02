@@ -189,6 +189,9 @@ class Domecek(Sprite):
         self.kamenyVDomecku.append(
             kamen
         )
+        kamen.pozice = Pozice(self.pozice.x, self.pozice.y + kamen.rect.width / 1.5 * len(self.kamenyVDomecku))
+        kamen.updateGrafiku()
+        return kamen
 
     def ziskejPocet(self) -> Number:
         return len(self.kamenyVDomecku)
@@ -297,7 +300,8 @@ class Hra:
             if cil <= 0 or cil >= len(self.herniPole):
                 pohyby = list()
                 pohyby.append(kostka)
-                moznePolicka.append(Tah(kamen, None, pohyby))
+                fakeDomecekPolicko = Policko( max(0, min(cil, len(self.herniPole))),kamen.hrac.domecek.pozice.x,kamen.hrac.domecek.pozice.y )
+                moznePolicka.append(Tah(kamen, fakeDomecekPolicko, pohyby))
                 continue
             moznePolicko = self.herniPole[cil]
             if moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac:
@@ -313,7 +317,8 @@ class Hra:
                 kombinace.append(kostky[IndexKomboKostek])
                 cil = policko + sum(kombinace) * kamen.hrac.smer
                 if cil <= 0 or cil >= len(self.herniPole):
-                    moznePolicka.append(Tah(kamen, None, kombinace))
+                    fakeDomecekPolicko = Policko( max(0, min(cil, len(self.herniPole))),kamen.hrac.domecek.pozice.x,kamen.hrac.domecek.pozice.y )
+                    moznePolicka.append(Tah(kamen, fakeDomecekPolicko, kombinace))
                     continue
                 moznePolicko = self.herniPole[cil]
                 if (moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac) and not Tah(
@@ -328,7 +333,8 @@ class Hra:
                 kombinace.append(kostky[IndexKomboKostek])
                 cil = policko + sum(kombinace) * kamen.hrac.smer
                 if cil <= 0 or cil >= len(self.herniPole):
-                    moznePolicka.append(Tah(kamen, None, kombinace))
+                    fakeDomecekPolicko = Policko( max(0, min(cil, len(self.herniPole))),kamen.hrac.domecek.pozice.x,kamen.hrac.domecek.pozice.y )
+                    moznePolicka.append(Tah(kamen, fakeDomecekPolicko, kombinace))
                     continue
                 moznePolicko = self.herniPole[cil]
                 if (moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac) and not Tah(
@@ -355,23 +361,23 @@ class Hra:
         # TODO MYSLET NA TO ŽE KAMENY SE HÝBOU!
         print(f'Typ cíl: {tah}')
         # Pro každou hodnotu v kostce
-        if tah.kamen.souradnice == self.kliknutePole.souradnice:
+        if tah.kamen.souradnice == self.kliknutePole.souradnice or (tah.policko.souradnice <= -1 or tah.policko.souradnice >= 24):
             print(f"Odebírám kámen")
-            odebranyKamen = self.kliknutePole.odeberKamen()
-            if odebranyKamen == tah.kamen:
-                cil = tah.kamen.souradnice
-                for hodnota in tah.pohyby:
-                    print(f"Hýbu s kamenem")
-                    cil += hodnota
-                    if cil == -1 or cil == 24:
-                        tah.kamen.hrac.domecek.schovejKamen(tah.kamen)
-                        self.dvojKostka.seznamHodnot.remove(hodnota)
-                    else:
-                        pole_cil = self.herniPole[cil]
-                        if pole_cil.maKamen() and len(pole_cil.kameny) == 1:
-                            pole_cil.odeberKamen()
-                        pole_cil.pridejKamen(tah.kamen)
-                        self.dvojKostka.seznamHodnot.remove(hodnota)
+            if self.kliknutePole is not None:
+                self.kliknutePole.odeberKamen()
+            cil = tah.kamen.souradnice
+            for hodnota in tah.pohyby:
+                print(f"Hýbu s kamenem")
+                cil += hodnota
+                if cil <= -1 or cil >= 24:
+                    tah.kamen.hrac.domecek.schovejKamen(tah.kamen)
+                    self.dvojKostka.seznamHodnot.remove(hodnota)
+                else:
+                    pole_cil = self.herniPole[cil]
+                    if pole_cil.maKamen() and len(pole_cil.kameny) == 1:
+                        pole_cil.odeberKamen()
+                    pole_cil.pridejKamen(tah.kamen)
+                    self.dvojKostka.seznamHodnot.remove(hodnota)
 
 
 
@@ -434,7 +440,7 @@ class Hra:
                     elif type(sprite) is Domecek:  # Je to domeček
                         #TODO najít takový tah, který se rovná kliknutému políčku a má souřadnici -1/24
                         for tah in self.mozneTahy:
-                            if tah.souradnice == -1 or tah.souradnice == 24:
+                            if tah.policko.souradnice == -1 or tah.policko.souradnice == 24:
                                 self.pohniKamen(tah)
                                 self.kliknutePole = None
                                 break

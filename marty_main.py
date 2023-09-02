@@ -154,7 +154,7 @@ class GlowTahy:
             print(f"NAŠLÉ TAHY PRO POLE: {tahy}")
 
             for pole in tahy:
-                if pole.policko is None:
+                if pole.policko.souradnice == -1 or pole.policko.souradnice == 24:
                     pos_domecek = pole.kamen.hrac.domecek.pozice
 
                     new_rect = self.rect3.copy()
