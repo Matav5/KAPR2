@@ -119,7 +119,11 @@ class Policko(Sprite):
             return self.kameny.pop()
         except:
             return None
-
+    def vyhodKamen(self) -> Kamen:
+        kamen = self.odeberKamen()
+        kamen.pozice = Pozice(100000,100000)
+        kamen.hrac.bar.vyrobKamen()
+        return kamen
     def __str__(self) -> str:
         return str(len(self.kameny))
 
@@ -130,7 +134,8 @@ class Policko(Sprite):
         if not self.maKamen():
             return None
         return self.kameny[len(self.kameny) - 1]
-
+    def daSeSebratKamen(self)->bool:
+            return len(self.kameny) == 1
     def vlastnikPolicka(self) -> Hrac:
         if not self.maKamen():
             return None
@@ -220,11 +225,15 @@ class Hra:
         self.groups = groups
         self.dvojKostka = HerniKostky()
         self.cervenyHrac = cervenyHrac
+        self.cervenyHrac.nazev = "Bílý hráč"
         self.cervenyHrac.smer = 1
         self.cervenyHrac.nastavDomecekABar(Pozice(1550, 310), Pozice(875, 310))
+        self.cervenyHrac.bar.souradnice = -1
 
         self.bilyHrac = bilyHrac
+        self.bilyHrac.nazev = "Bílý hráč"
         self.bilyHrac.smer = -1
+        self.cervenyHrac.bar.souradnice = 24
         self.bilyHrac.nastavDomecekABar(Pozice(1550, 760), Pozice(875, 760))
 
         self.herniPole = []
@@ -235,7 +244,6 @@ class Hra:
 
         # Implementovat rozhodnutí pořadí kostkou
         self.aktualniHrac = cervenyHrac
-        self.dvojKostka.hod()
         print(self.dvojKostka.seznamHodnot)
 
     # viz obrázek ./pomocnyMaterial/deskaLayout.png
@@ -275,7 +283,7 @@ class Hra:
             print(f"Poličko ({i}) na poz: X: {policko.pozice.x} Y:{policko.pozice.y}")
         self.herniPole = policka
 
-    def vypisTahyPolicek(self, kostky) -> list():
+    def vypisTahyPolicek(self, kostky : list) -> list():
         '''
         Výpis možností pro hráče
         '''
@@ -287,7 +295,12 @@ class Hra:
                 continue
             else:
                 moznePolicka.extend(self.vypisTah(kostky, index))
-        return set(moznePolicka)
+        listPredIndexem = set(moznePolicka)
+        listMoznychPolicek = list()
+        for tah in listPredIndexem:
+            listMoznychPolicek.append(tah)
+            
+        return listMoznychPolicek
 
     def vypisTah(self, kostky: list, policko: int) -> list():
         '''
@@ -299,13 +312,14 @@ class Hra:
             # for soucet in range(index,0,-1):
             cil = policko + kostka * kamen.hrac.smer
             if cil <= 0 or cil >= len(self.herniPole):
-                pohyby = list()
-                pohyby.append(kostka)
-                fakeDomecekPolicko = Policko( max(0, min(cil, len(self.herniPole))),kamen.hrac.domecek.pozice.x,kamen.hrac.domecek.pozice.y )
-                moznePolicka.append(Tah(kamen, fakeDomecekPolicko, pohyby))
+                if self.maHracKamenyVeCtvrtymSegmentu(kamen.hrac):
+                    pohyby = list()
+                    pohyby.append(kostka)
+                    fakeDomecekPolicko = Policko( max(0, min(cil, len(self.herniPole))),kamen.hrac.domecek.pozice.x,kamen.hrac.domecek.pozice.y )
+                    moznePolicka.append(Tah(kamen, fakeDomecekPolicko, pohyby))
                 continue
             moznePolicko = self.herniPole[cil]
-            if moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac:
+            if moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac or (moznePolicko.vlastnikPolicka() != kamen.hrac and moznePolicko.daSeSebratKamen()):
                 pohyby = list()
                 pohyby.append(kostka)
                 moznePolicka.append(Tah(kamen, moznePolicko, pohyby))
@@ -318,11 +332,12 @@ class Hra:
                 kombinace.append(kostky[IndexKomboKostek])
                 cil = policko + sum(kombinace) * kamen.hrac.smer
                 if cil <= 0 or cil >= len(self.herniPole):
-                    fakeDomecekPolicko = Policko( max(0, min(cil, len(self.herniPole))),kamen.hrac.domecek.pozice.x,kamen.hrac.domecek.pozice.y )
-                    moznePolicka.append(Tah(kamen, fakeDomecekPolicko, kombinace))
+                    if self.maHracKamenyVeCtvrtymSegmentu(kamen.hrac):
+                        fakeDomecekPolicko = Policko( max(0, min(cil, len(self.herniPole))),kamen.hrac.domecek.pozice.x,kamen.hrac.domecek.pozice.y )
+                        moznePolicka.append(Tah(kamen, fakeDomecekPolicko, kombinace))
                     continue
                 moznePolicko = self.herniPole[cil]
-                if (moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac) and not Tah(
+                if (moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac) or (moznePolicko.vlastnikPolicka() != kamen.hrac and moznePolicko.daSeSebratKamen()) and not Tah(
                         kamen, moznePolicko, kombinace) in moznePolicka:
                     moznePolicka.append(Tah(kamen, moznePolicko, kombinace))
                 else:
@@ -334,18 +349,23 @@ class Hra:
                 kombinace.append(kostky[IndexKomboKostek])
                 cil = policko + sum(kombinace) * kamen.hrac.smer
                 if cil <= 0 or cil >= len(self.herniPole):
-                    fakeDomecekPolicko = Policko( max(0, min(cil, len(self.herniPole))),kamen.hrac.domecek.pozice.x,kamen.hrac.domecek.pozice.y )
-                    moznePolicka.append(Tah(kamen, fakeDomecekPolicko, kombinace))
+                    if self.maHracKamenyVeCtvrtymSegmentu(kamen.hrac):
+                        fakeDomecekPolicko = Policko( max(0, min(cil, len(self.herniPole))),kamen.hrac.domecek.pozice.x,kamen.hrac.domecek.pozice.y )
+                        moznePolicka.append(Tah(kamen, fakeDomecekPolicko, kombinace))
                     continue
                 moznePolicko = self.herniPole[cil]
-                if (moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac) and not Tah(
+                if (moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac) or (moznePolicko.vlastnikPolicka() != kamen.hrac and moznePolicko.daSeSebratKamen())and not Tah(
                         kamen, moznePolicko, kombinace) in moznePolicka:
                     moznePolicka.append(Tah(kamen, moznePolicko, kombinace))
                 else:
                     print(
                         f"{kamen.souradnice} na pozici: {cil}  Vlastní Opponent: {not (moznePolicko.vlastnikPolicka() == None or moznePolicko.vlastnikPolicka() == kamen.hrac)} a je v seznamu: {Tah(kamen, moznePolicko, kombinace) in moznePolicka}")
 
-        return set(moznePolicka)
+        listPredIndexem = set(moznePolicka)
+        listMoznychPolicek = list()
+        for tah in listPredIndexem:
+            listMoznychPolicek.append(tah)
+        return listMoznychPolicek
 
     def hracNaRade(self, hrac) -> bool:
         return hrac == self.aktualniHrac
@@ -366,6 +386,10 @@ class Hra:
             self.aktualniHrac = self.bilyHrac
         else:
             self.aktualniHrac = self.cervenyHrac
+
+        self.dvojKostka.hodilKostkou = False
+        if type(self.aktualniHrac) is AIHrac:
+            self.aktualniHrac.hraj(self)
         # TODO Pokud hráč bude AIHrac => zavolá funkci Hraj(hra)
 
     def pohniKamen(self, tah : Tah):
@@ -387,11 +411,11 @@ class Hra:
                 else:
                     pole_cil = self.herniPole[cil]
                     if pole_cil.maKamen() and len(pole_cil.kameny) == 1:
-                        pole_cil.odeberKamen()
+                        pole_cil.vyhodKamen()
                     pole_cil.pridejKamen(tah.kamen)
                     self.dvojKostka.seznamHodnot.remove(hodnota)
-                    if len(self.dvojKostka.seznamHodnot) == 0:
-                        self.prepniHrace()
+        if len(self.dvojKostka.seznamHodnot) == 0 and self.dvojKostka.hodilKostkou:
+            self.prepniHrace()
 
 
 
@@ -418,17 +442,23 @@ class Hra:
                                     self.kliknutePole = policko
                                     self.mozneTahy = self.vypisTah(self.dvojKostka.seznamHodnot,
                                                                    self.kliknutePole.souradnice)
-                                    print(
-                                        f"Políčko !! {type(sprite)}, myška x: {event.pos}\n Políčko: {self.kliknutePole.souradnice}")
+                                    if len(self.mozneTahy) == 0 :
+                                        self.kliknutePole = None
+                                    else:
+                                        print(
+                                            f"Políčko !! {type(sprite)}, myška x: {event.pos}\n Políčko: {self.kliknutePole.souradnice}")
                                     break
                     # myslel jsem si, že se podívám, zda mám nakliknuté políčko a poté pokud jsem kliknul na cokoli jiného, co není v množině možné tahy
                     # tak se vrátím zpět
-                    if self.kliknutePole is Policko:
+                    elif type(self.kliknutePole) is Policko:
+                        naselPolicko = False
                         for tah in self.mozneTahy:
-                            if sprite != tah.policko:
-                                self.kliknutePole = None
-                                print(f"Vracím se!")
-                                break
+                            if sprite == tah.policko:
+                                naselPolicko = True
+                        if not naselPolicko:
+                            self.kliknutePole = None
+                            print(f"Vracím se!")
+
                     if type(sprite) is Policko and len(self.mozneTahy) > 0 and self.kliknutePole is not None:
                         for tah in self.mozneTahy:
                             if sprite == tah.policko:
@@ -439,14 +469,15 @@ class Hra:
 
                     # TODO zjistit jak ošetřit, že již je políčko vybrané a chceme kliknout na higlightované - příznak?
                     elif type(sprite) is Bar and len(sprite.vyrobeneKameny) >= 1:
-                        if sprite.hrac == self.hracNaRade(self.aktualniHrac):
-                            if self.hracNaRade(self.aktualniHrac) == self.cervenyHrac:
-                                barTah = self.vypisTah(self.dvojKostka.seznamHodnot, -1)
-                                self.pohniKamen(barTah)
-
-                            if self.hracNaRade(self.aktualniHrac) == self.bilyHrac:
-                                barTah = self.vypisTah(self.dvojKostka.seznamHodnot, 24)
-                                self.pohniKamen(barTah)
+                        print("vybral by se domeček")
+                        continue
+                        if self.hracNaRade(self.aktualniHrac):
+                            if self.aktualniHrac == self.cervenyHrac:
+                                self.mozneTahy = self.vypisTah(self.dvojKostka.seznamHodnot, -1)
+                                self.kliknutePole = sprite
+                            if self.aktualniHrac == self.bilyHrac:
+                                self.mozneTahy = self.vypisTah(self.dvojKostka.seznamHodnot, 24)
+                                self.kliknutePole = sprite
 
 
                     # TODO podivej se, jestli má hráč na tahu kameny na baru, pokud ano, neumožni mu hrát jiný kámen
@@ -476,7 +507,9 @@ class Hra:
         print(pocetKamenu)
         return pocetKamenu == 15
     # Když bude v baru více než jeden, musíš ho vybrat a pokud ho vybereš, ukáže políčka z baru --
-
+    def hodKostkou(self):
+        self.dvojKostka.hod()
+        self.mozneTahy = self.vypisTahyPolicek(self.dvojKostka.seznamHodnot)
 
 class AIHrac(Hrac):
     def __init__(self, obrazek, *groups: Group) -> None:
@@ -491,11 +524,18 @@ class AIHrac(Hrac):
         '''
         if hra.aktualniHrac != self:
             return
+        hra.hodKostkou()
+
+        if len(hra.mozneTahy) == 0:
+            hra.prepniHrace()
+            return
+        
         while len(hra.dvojKostka.seznamHodnot) > 0 and hra.dvojKostka.hodilKostkou:
             tahy = hra.vypisTahyPolicek(hra.dvojKostka.seznamHodnot)
+
             # Pokud nemá tahy ukončí kolo
             if len(tahy) == 0:
-                return
+                break
             nejlepsiTah = tahy[0]
             for tah in tahy:
                 # Zjistí jestli tah má v cíli protivníka který má jen jeden kámen => pokud ano ihned se tam pohne a pokračuje dalším tahem
@@ -527,21 +567,15 @@ class AIHrac(Hrac):
                     else:
                         if tah.kamen.souradnice > nejlepsiTah.kamen.souradnice:
                             nejlepsiTah = tah
-            hra.dvojKostka.seznamHodnot.remove(abs(nejlepsiTah.kamen.souradnice - nejlepsiTah.policko.souradnice))
             # TODO udělat funkci pohni Kamen
-            hra.pohniKamen(nejlepsiTah.kamen, nejlepsiTah.policko)
-
-    def osamocenyKamen(self, hra: Hra, tah: tuple) -> bool:
+            hra.kliknutePole = hra.herniPole[nejlepsiTah.kamen.souradnice]
+            hra.pohniKamen(nejlepsiTah)
+    def osamocenyKamen(self, hra: Hra, tah: Tah) -> bool:
         vybranePolicko = hra.herniPole[tah.kamen.souradnice]
         if vybranePolicko is Policko:
             return False
         return vybranePolicko.daSeSebratKamen()
 
-    def osamocenyKamen(self, hra: Hra, tah: tuple) -> bool:
-        vybranePolicko = hra.herniPole[tah[0].souradnice]
-        if vybranePolicko is Policko:
-            return False
-        return vybranePolicko.daSeSebratKamen()
 
 """
 ai = AIHrac("red_front_side.png")

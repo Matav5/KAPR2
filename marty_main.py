@@ -25,7 +25,7 @@ vybranePolicko = None
 
 #----------------------------------------------------------
 clovekHrac = Hrac( "red_front_side.png",vykreslovaci_group)
-hra = Hra(clovekHrac,Hrac( "white_front_side.png",vykreslovaci_group), vykreslovaci_group)
+hra = None
 #----------------------------------------------------------
 class Menu:
     def __init__(self):
@@ -37,25 +37,27 @@ class Menu:
         self.rollbutton = None
 
     def ZapniAI(self):
+        global hra
+        global vykreslovaci_group
         print("Jsem v ZapniAI!")
         self.status = False
         for i in self.buttons:
             i.hide()
+        ai = AIHrac("red_front_side.png",vykreslovaci_group)
+        hra = Hra(Hrac("white_front_side.png",vykreslovaci_group),ai,vykreslovaci_group)
         menu.RollDice()
-        ai = AIHrac("red_front_side.png")
-        hra = Hra(ai,Hrac("white_front_side.png"))
-        return hra
 
 
     def ZapniHrace(self):
+        global hra
+        global vykreslovaci_group
         print("Jsem v ZapniHrace!")
         self.status = False
         for i in self.buttons:
             i.hide()
-        menu.RollDice()
         clovekHrac = Hrac( "red_front_side.png",vykreslovaci_group)
         hra = Hra(clovekHrac,Hrac( "white_front_side.png",vykreslovaci_group), vykreslovaci_group)
-        return hra
+        menu.RollDice()
 
 
     def AIButton(self):
@@ -103,6 +105,7 @@ class Menu:
 
 
     def RollDice(self):
+        global hra
         self.rollbutton = Button(
         # Mandatory Parameters
         screen,  # Surface to place button on
@@ -120,7 +123,7 @@ class Menu:
         hoverColour=(150, 0, 0),  # Colour of button when being hovered over
         pressedColour=(233, 200, 20),  # Colour of button when being clicked
         radius=20,  # Radius of border corners (leave empty for not curved)
-        onClick=hra.dvojKostka.hod
+        onClick=hra.hodKostkou
         )
         self.buttons.append(self.rollbutton)
         print("Vytvořil jsem hod kostkou!")
@@ -140,7 +143,7 @@ class InfoInGame:
 
 
     def InfoHra(self, vstup):
-        self.textHra = "Hrac: " + str(vstup)
+        self.textHra = "Hrac: " + str(vstup.nazev)
 
 
     def ZobrazTextKostka(self, screen):
@@ -169,7 +172,8 @@ class GlowTahy:
     def NajdiPole(self, hra):
         self.pole.clear()
         self.rect_to_print.clear()
-
+        if hra == None:
+            return
         if hra.kliknutePole != None:
             print("Vybrane pole existuje!")
 
@@ -188,7 +192,7 @@ class GlowTahy:
                     continue
 
                 pole = pole.policko.pozice
-                print(pole)
+                #print(pole)
                 #print(f"NENÍ NONE: {pole}")
 
                 if pole.y > 500:
@@ -241,13 +245,6 @@ menu = Menu()
 print(f"SEZNAM TLAČÍTEK: {menu.buttons}")
 #----------------------------------------------------------------------------
 
-for policko in hra.herniPole:
-    for policko_kamen in policko.kameny:
-         vykreslovaci_group.add(policko_kamen)
-
-for policko in hra.herniPole:
-    vykreslovaci_group.add(policko)
-
 try:
     glow.NajdiPole(hra)
 except:
@@ -265,8 +262,8 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
-
-            hra.update(event)
+            if hra != None:
+                hra.update(event)
 
     if menu.status:
         screen.blit(menu_image, (0, 0))
